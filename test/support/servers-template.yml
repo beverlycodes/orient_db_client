@@ -1,0 +1,5 @@
+test:
+	host: localhost
+	port: 2424
+	user: root
+	password: # Listed in orientdb-server-config.xml of OrientDB server
