@@ -2,7 +2,7 @@ test:
   host: localhost
   port: 2424
   server_user: root
-  server_password: 8F6FB3168FAF265896A3532C83C5E33F8B6A47996229184582D1499D5B3E8C75
-  database: ruby_driver_test
+  server_password: 83CACE21A23DB46F93BFD58A3CE48C8D29926C6EF424D7DA9BD725AE070CCDC0
+  database: temp
   user: admin
   password: admin

@@ -6,7 +6,7 @@ class TestProtocol7 < MiniTest::Unit::TestCase
   include ProtocolHelper
 
   SOCKET_RECV_EXPECTATION = lambda do |r|
-    expectation = { :method => :recv }
+    expectation = { :method => :read }
 
     if r.is_a?(Hash)
       expectation[:param] = r[:param] if r[:param]
@@ -83,6 +83,68 @@ class TestProtocol7 < MiniTest::Unit::TestCase
     assert_equal @session, result[:message_content][:session]
   end
 
+  def test_count
+    cluster_name = "vertexes"
+    record_count = 1564
+
+    request = OrientDbClient::NetworkMessage.new { |m|
+      m.add :byte,    @protocol::Operations::COUNT
+      m.add :integer, @session
+      m.add :string,  cluster_name
+    }.pack
+
+    socket_receives(request)
+
+    chain = [
+      pack_byte(@protocol::Statuses::OK),
+      pack_integer(@session),
+      pack_long(record_count)
+    ].map! &SOCKET_RECV_EXPECTATION
+
+    expect_sequence @socket, chain, 'response'
+    
+    result = @protocol.count(@socket, @session, cluster_name)
+
+    assert_equal record_count, result[:message_content][:record_count]
+  end
+
+  def test_command
+    command_string = 'SELECT FROM OUser'
+
+    command = OrientDbClient::NetworkMessage.new { |m|
+      m.add :string,  'com.orientechnologies.orient.core.sql.query.OSQLSynchQuery'
+      m.add :string,  command_string
+      m.add :integer, -1
+      m.add :integer, 0
+    }.pack
+
+    request = OrientDbClient::NetworkMessage.new { |m| 
+      m.add :byte,    @protocol::Operations::COMMAND
+      m.add :integer, @session
+      m.add :byte,    's'
+      m.add :string,  command
+    }.pack
+
+    socket_receives(request)
+
+    chain = [
+      pack_byte(@protocol::Statuses::OK),
+      pack_integer(@session),
+      pack_byte(@protocol::PayloadStatuses::NULL),
+      pack_byte(@protocol::PayloadStatuses::NO_RECORDS)
+    ].map! &SOCKET_RECV_EXPECTATION
+
+    expect_sequence @socket, chain, 'response'
+
+    result = @protocol.command(@socket, @session, command_string)
+
+    assert_equal @session, result[:session]
+
+    assert result[:message_content].is_a?(Array)
+    assert_equal 1, result[:message_content].length
+    assert_nil  result[:message_content][0]
+  end
+
   def test_datacluster_add_logical
     type = :logical       # Use symbol here, please
     container = 15
@@ -106,8 +168,7 @@ class TestProtocol7 < MiniTest::Unit::TestCase
 
     expect_sequence @socket, chain, 'response'
 
-    result = @protocol.datacluster_add(@socket, @session, {
-      :type => type,
+    result = @protocol.datacluster_add(@socket, @session, type, {
       :physical_cluster_container_id => container
     })
 
@@ -138,8 +199,7 @@ class TestProtocol7 < MiniTest::Unit::TestCase
 
     expect_sequence @socket, chain, 'response'
 
-    result = @protocol.datacluster_add(@socket, @session, {
-      :type => type,
+    result = @protocol.datacluster_add(@socket, @session, type, {
       :name => name
     })
 
@@ -174,8 +234,7 @@ class TestProtocol7 < MiniTest::Unit::TestCase
 
     expect_sequence @socket, chain, 'response'
 
-    result = @protocol.datacluster_add(@socket, @session, {
-      :type => type,
+    result = @protocol.datacluster_add(@socket, @session, type, {
       :name => name,
       :file_name => file_name,
       :initial_size => size
@@ -249,14 +308,12 @@ class TestProtocol7 < MiniTest::Unit::TestCase
   end
 
   def test_db_create
-    db_type = 'graph'
     storage_type = 'local'
 
     request = OrientDbClient::NetworkMessage.new { |m|
       m.add :byte,    @protocol::Operations::DB_CREATE
       m.add :integer, @session
       m.add :string,  @database
-      m.add :string,  db_type
       m.add :string,  storage_type
     }.pack
 
@@ -269,7 +326,7 @@ class TestProtocol7 < MiniTest::Unit::TestCase
 
     expect_sequence @socket, chain, 'response'
 
-    result = @protocol.db_create(@socket, @session, @database, db_type, storage_type)
+    result = @protocol.db_create(@socket, @session, @database, storage_type)
 
     assert_equal @session, result[:session]
   end
@@ -372,6 +429,139 @@ class TestProtocol7 < MiniTest::Unit::TestCase
       assert_equal @clusters[i][:name], result[:message_content][:clusters][i][:name]
       assert_equal @clusters[i][:type], result[:message_content][:clusters][i][:type]
     end
+  end
+
+  def test_record_create_document_synchronous
+    cluster_id = 35
+    cluster_position = 1726
+
+    record = {
+      :document => {
+        :key1 => 'value1',
+        :key2 => 'value2'
+      }
+    }
+
+    request = OrientDbClient::NetworkMessage.new { |m|
+      m.add :byte,    @protocol::Operations::RECORD_CREATE
+      m.add :integer, @session
+      m.add :short,   cluster_id
+      m.add :string,  @protocol.serializer.serialize(record)
+      m.add :byte,    'd'.ord
+      m.add :byte,    @protocol::SyncModes::SYNC
+    }.pack
+
+    socket_receives(request)
+
+    chain = [
+      pack_byte(@protocol::Statuses::OK),
+      pack_integer(@session),
+      pack_long(cluster_position)
+    ].map! &SOCKET_RECV_EXPECTATION
+
+    expect_sequence @socket, chain, 'response'
+
+    result = @protocol.record_create(@socket, @session, cluster_id, record)
+
+    assert_equal cluster_id, result[:message_content][:cluster_id]
+    assert_equal cluster_position, result[:message_content][:cluster_position]
+  end
+
+  def test_record_delete_synchronous
+    cluster_id = 35
+    cluster_position = 1726
+    version = 0
+
+    request = OrientDbClient::NetworkMessage.new { |m|
+      m.add :byte,    @protocol::Operations::RECORD_DELETE
+      m.add :integer, @session
+      m.add :short,   cluster_id
+      m.add :long,    cluster_position
+      m.add :integer, version
+      m.add :byte,    @protocol::SyncModes::SYNC
+    }.pack
+
+    socket_receives(request)
+
+    chain = [
+      pack_byte(@protocol::Statuses::OK),
+      pack_integer(@session),
+      pack_byte(1)
+    ].map! &SOCKET_RECV_EXPECTATION
+
+    expect_sequence @socket, chain, 'response'
+
+    result = @protocol.record_delete(@socket, @session, cluster_id, cluster_position, version)
+
+    assert_equal 1, result[:message_content][:payload_status]
+  end
+
+  def test_record_load
+    cluster_id = 3
+    cluster_position = 6
+
+    request = OrientDbClient::NetworkMessage.new { |m|
+      m.add :byte,    @protocol::Operations::RECORD_LOAD
+      m.add :integer, @session
+      m.add :short,   cluster_id
+      m.add :long,    cluster_position
+      m.add :string,  ""
+    }.pack
+
+    socket_receives(request)
+
+    chain = [
+      pack_byte(@protocol::Statuses::OK),
+      pack_integer(@session),
+      pack_byte(@protocol::PayloadStatuses::NULL),
+      pack_byte(@protocol::PayloadStatuses::NO_RECORDS)
+    ].map! &SOCKET_RECV_EXPECTATION
+
+    expect_sequence @socket, chain, 'response'
+
+    result = @protocol.record_load(@socket, @session, OrientDbClient::Rid.new(cluster_id, cluster_position))
+
+    assert_equal @session, result[:session]
+  end
+
+  def test_record_update_document_synchronous
+    cluster_id = 35
+    cluster_position = 1726
+    record_version_policy = -2
+    record_version = 0
+
+    record = {
+      :document => {
+        :key1 => 'value1',
+        :key2 => 'value2',
+        :key3 => 'value3'
+      }
+    }
+
+    request = OrientDbClient::NetworkMessage.new { |m|
+      m.add :byte,    @protocol::Operations::RECORD_UPDATE
+      m.add :integer, @session
+      m.add :short,   cluster_id
+      m.add :long,    cluster_position
+      m.add :string,  @protocol.serializer.serialize(record)
+      m.add :integer, record_version_policy
+      m.add :byte,    'd'.ord
+      m.add :byte,    @protocol::SyncModes::SYNC
+    }.pack
+
+    socket_receives(request)
+
+    chain = [
+      pack_byte(@protocol::Statuses::OK),
+      pack_integer(@session),
+      pack_integer(record_version)
+    ].map! &SOCKET_RECV_EXPECTATION
+
+    expect_sequence @socket, chain, 'response'
+
+    result = @protocol.record_update(@socket, @session, cluster_id, cluster_position, record)
+
+    assert_equal record_version, result[:message_content][:record_version]
   end
 
   def test_db_reload

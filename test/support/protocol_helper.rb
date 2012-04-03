@@ -1,5 +1,9 @@
 module ProtocolHelper
   def pack_byte(value)
+    if value.is_a?(String)
+      value = value.length > 0 ? value[0].ord : 0
+    end
+
     [ value ].pack('C')
   end
 

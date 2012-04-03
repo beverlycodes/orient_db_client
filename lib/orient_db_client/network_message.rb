@@ -22,7 +22,15 @@ module OrientDbClient
 				end
 			end
 
-			content = @components.map { |c| c[:value] }
+			content = @components.map do |c|
+				value = c[:value]
+
+				if c[:type] == :byte && value.is_a?(String)
+					c[:value] = value.length > 0 ? value[0].ord : 0
+				end
+
+				c[:value]
+			end
 
 			content.pack packing_list.join(" ")
 		end

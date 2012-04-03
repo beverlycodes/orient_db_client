@@ -21,7 +21,8 @@ class TestOpenDatabase < MiniTest::Unit::TestCase
 
     refute_nil session.id
 
-    refute_nil session.cluster("ographvertex")
-    refute_nil session.cluster("ographedge")
+    refute_nil session.cluster("orids")
+    refute_nil session.cluster("ouser")
+    refute_nil session.cluster("orole")
   end
 end

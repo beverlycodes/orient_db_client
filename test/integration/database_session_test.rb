@@ -25,4 +25,68 @@ class TestDatabaseSession < MiniTest::Unit::TestCase
     refute @connection.closed?
   end
 
+  def test_command
+    result = @session.command("SELECT FROM OUser")
+
+    assert_equal @session.id, result[:session]
+
+    result[:message_content].tap do |content|
+      assert_equal 3, content.length
+  
+      content[0].tap do |record|
+        assert_equal 0, record[:format]
+        assert_equal 4, record[:cluster_id]
+        assert_equal 0, record[:cluster_position]
+
+        record[:document].tap do |doc|
+          assert_equal 'admin', doc['name']
+          assert_equal 'ACTIVE', doc['status']
+
+          doc['roles'].tap do |roles|
+            assert roles.is_a?(Array), "expected Array, but got #{roles.class}"
+
+            assert roles[0].is_a?(OrientDbClient::Rid)
+            assert_equal 3, roles[0].cluster_id
+            assert_equal 0, roles[0].cluster_position
+          end
+        end
+      end
+    end
+  end
+
+  def test_count
+    result = @session.count("ORole")
+
+    assert_equal @session.id, result[:session]
+    assert_equal 3, result[:message_content][:record_count]
+  end
+
+  def test_create_cluster
+    result = @session.create_cluster("PHYSICAL", "OTest")
+  end
+
+  def test_load_record
+    result = @session.load_record("#4:0")
+
+    assert_equal @session.id, result[:session]
+
+    result[:message_content].tap do |record|
+      assert_equal 4, record[:cluster_id]
+      assert_equal 0, record[:cluster_position]
+
+      record[:document].tap do |doc|
+        assert_equal 'admin', doc['name']
+        assert_equal 'ACTIVE', doc['status']
+
+        doc['roles'].tap do |roles|
+          assert roles.is_a?(Array), "expected Array, but got #{roles.class}"
+
+          assert roles[0].is_a?(OrientDbClient::Rid)
+          assert_equal 3, roles[0].cluster_id
+          assert_equal 0, roles[0].cluster_position
+        end
+      end
+    end
+  end
+
 end

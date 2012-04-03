@@ -14,7 +14,7 @@ module ConnectionHelper
     begin
       TCPSocket.stubs(:open).returns(mock_socket)
 
-      mock_socket.stubs(:recv).returns([version].pack('s>'))
+      mock_socket.stubs(:read).returns([version].pack('s>'))
       mock_socket.stubs(:close)
 
       connection = connect_to_orientdb({})

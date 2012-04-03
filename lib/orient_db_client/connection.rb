@@ -22,6 +22,14 @@ module OrientDbClient
       @socket.closed?
     end
 
+    def command(session, text, options = {})
+      @protocol.command(@socket, session, text, options)
+    end
+
+    def count(session, cluster_name)
+      @protocol.count(@socket, session, cluster_name)
+    end
+
     def create_database(session, database, options = {})
       options = {
         :type => "graph",         # Will be used in protocol version 8
@@ -39,6 +47,21 @@ module OrientDbClient
 
     def delete_database(session, database)
       @protocol.db_delete(@socket, session, database)
+    end
+
+    def load_record(session, rid)
+      rid = OrientDbClient::Rid.new(rid) if rid.is_a?(String)
+
+      result = @protocol.record_load(@socket, session, rid)
+
+      if result[:message_content]
+        result[:message_content].tap do |r|
+          r[:cluster_id] = rid.cluster_id
+          r[:cluster_position] = rid.cluster_position
+        end
+      end
+
+      result
     end
 
     def open_server(options = {})

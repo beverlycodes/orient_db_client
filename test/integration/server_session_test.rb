@@ -20,10 +20,6 @@ class TestServerSession < MiniTest::Unit::TestCase
   def test_database_exists_command
   	assert @session.database_exists?(@options["database"])
   	refute @session.database_exists?("InvalidDatabase")
-
-  	# For some reason (hopefully an OrientDB bug...), the server creates
-  	# a database when db_exist is false.  Clean up the mess...
-  	@session.delete_database("InvalidDatabase")
   end
 
   def test_create_and_delete_database_commands

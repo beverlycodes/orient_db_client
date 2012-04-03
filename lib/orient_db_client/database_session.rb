@@ -20,6 +20,14 @@ module OrientDbClient
 			@connection.close_database(@id)
 		end
 
+		def command(text, options = {})
+			@connection.command(@id, text, options)
+		end
+
+		def count(cluster_name)
+			@connection.count(@id, cluster_name)
+		end
+
 		def cluster(id)
 			if id.kind_of?(Fixnum)
 				@clusters[id]
@@ -30,6 +38,10 @@ module OrientDbClient
 
 		def clusters
 			@clusters.values
+		end
+
+		def load_record(rid)
+			@connection.load_record(@id, rid)
 		end
 	end
 end
