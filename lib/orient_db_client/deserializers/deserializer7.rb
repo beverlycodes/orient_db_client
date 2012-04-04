@@ -155,6 +155,7 @@ module OrientDbClient
                             struct_info[:type] = :date
                             parse_date(value)
                         else
+                            struct_info[:type] = :integer
                             value.to_i
                         end
                     end

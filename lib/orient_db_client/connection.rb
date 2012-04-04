@@ -22,6 +22,27 @@ module OrientDbClient
       @socket.closed?
     end
 
+    def cluster_exists?(session, cluster_id_or_name)
+      result = true
+
+      begin
+        if cluster_id_or_name.is_a?(String)
+          @protocol.count(@socket, session, cluster_id_or_name)
+        else
+          @protocol.datacluster_datarange(@socket, session, cluster_id_or_name)
+        end
+      rescue OrientDbClient::ProtocolError => err
+        case err.exception_class
+        when 'java.lang.IndexOutOfBoundsException', 'java.lang.IllegalArgumentException'
+          result = false
+        else
+          throw err
+        end
+      end
+
+      result
+    end
+
     def command(session, text, options = {})
       @protocol.command(@socket, session, text, options)
     end
@@ -39,6 +60,10 @@ module OrientDbClient
       @protocol.db_create(@socket, session, database, options[:storage_type])
     end
 
+    def create_cluster(session, type, options)
+      @protocol.datacluster_add(@socket, session, type, options)
+    end
+
     def database_exists?(session, database)
       response = @protocol.db_exist(@socket, session, database)
 
@@ -47,6 +72,14 @@ module OrientDbClient
 
     def delete_database(session, database)
       @protocol.db_delete(@socket, session, database)
+    end
+
+    def delete_cluster(session, cluster_id)
+      @protocol.datacluster_remove(@socket, session, cluster_id)
+    end
+
+    def get_cluster_datarange(session, cluster_id)
+      @protocol.datacluster_datarange(@socket, session, cluster_id)
     end
 
     def load_record(session, rid)
@@ -79,5 +112,14 @@ module OrientDbClient
 
       @sessions[session] = DatabaseSession.new(message_content[:session], self, message_content[:clusters])
   	end
+
+    def reload(session)
+      result = @protocol.db_reload(@socket, session)
+      clusters = result[:message_content][:clusters]
+
+      @sessions.values.each do |s|
+        s.send :store_clusters, clusters
+      end
+    end
   end
 end

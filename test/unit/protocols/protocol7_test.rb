@@ -244,6 +244,35 @@ class TestProtocol7 < MiniTest::Unit::TestCase
     assert_equal new_cluster_number, result[:message_content][:new_cluster_number]
   end
 
+  def test_datacluster_datarange
+    cluster_id = 1
+    range_begin = 0
+    range_end = 1000
+
+    request = OrientDbClient::NetworkMessage.new { |m|
+      m.add :byte,    @protocol::Operations::DATACLUSTER_DATARANGE
+      m.add :integer, @session
+      m.add :short,   cluster_id
+    }.pack
+
+    socket_receives(request)
+
+    chain = [
+      { :param => Sizes::BYTE,    :return => pack_byte(@protocol::Statuses::OK) },
+      { :param => Sizes::INTEGER, :return => pack_integer(@session) },
+      { :param => Sizes::LONG,    :return => pack_long(range_begin) },
+      { :param => Sizes::LONG,    :return => pack_long(range_end) }
+    ].map! &SOCKET_RECV_EXPECTATION
+
+    expect_sequence @socket, chain, 'response'
+
+    result = @protocol.datacluster_datarange(@socket, @session, cluster_id)
+
+    assert_equal @session,    result[:session]
+    assert_equal range_begin, result[:message_content][:begin]
+    assert_equal range_end,   result[:message_content][:end]
+  end
+
   def test_datacluster_remove
     id = 10
 

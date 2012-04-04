@@ -13,23 +13,24 @@ module OrientDbClient
 			end
 
 			module Operations
-				CONNECT				= 2
-				COUNT 				= 40
-				DATACLUSTER_ADD		= 10
-				DATACLUSTER_REMOVE	= 11
-				DB_CLOSE			= 5
-				DB_COUNTRECORDS 	= 9
-				DB_CREATE 			= 4
-				DB_DELETE 			= 7
-				DB_EXIST 			= 6
-				DB_OPEN 			= 3
-				DB_RELOAD 			= 73
-				DB_SIZE 			= 8
-				COMMAND				= 41
-				RECORD_CREATE		= 31
-				RECORD_DELETE		= 33
-				RECORD_LOAD			= 30
-				RECORD_UPDATE		= 32
+				CONNECT					= 2
+				COUNT 					= 40
+				DATACLUSTER_ADD			= 10
+				DATACLUSTER_DATARANGE	= 13
+				DATACLUSTER_REMOVE		= 11
+				DB_CLOSE				= 5
+				DB_COUNTRECORDS 		= 9
+				DB_CREATE 				= 4
+				DB_DELETE 				= 7
+				DB_EXIST 				= 6
+				DB_OPEN 				= 3
+				DB_RELOAD 				= 73
+				DB_SIZE 				= 8
+				COMMAND					= 41
+				RECORD_CREATE			= 31
+				RECORD_DELETE			= 33
+				RECORD_LOAD				= 30
+				RECORD_UPDATE			= 32
 			end
 
 			module RecordTypes
@@ -149,6 +150,19 @@ module OrientDbClient
 
 				{ :session 			=> read_integer(socket),
 				  :message_content 	=> read_datacluster_add(socket) }
+			end
+
+			def self.datacluster_datarange(socket, session, cluster_id)
+				socket.write NetworkMessage.new { |m|
+					m.add :byte, 	Operations::DATACLUSTER_DATARANGE
+					m.add :integer,	session
+					m.add :short,	cluster_id
+				}.pack
+
+				read_response(socket)
+
+				{ :session 			=> read_integer(socket),
+				  :message_content 	=> read_datacluster_datarange(socket) }
 			end
 
 			def self.datacluster_remove(socket, session, cluster_id)
@@ -403,7 +417,12 @@ module OrientDbClient
 			end
 
 			def self.read_datacluster_add(socket)
-				{ new_cluster_number: read_short(socket) }
+				{ :new_cluster_number => read_short(socket) }
+			end
+
+			def self.read_datacluster_datarange(socket)
+				{ :begin => read_long(socket),
+				  :end =>	read_long(socket) }
 			end
 
 			def self.read_datacluster_remove(socket)

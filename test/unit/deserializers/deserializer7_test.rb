@@ -10,14 +10,23 @@ class TestDeserializer7 < MiniTest::Unit::TestCase
 
         result = @deserializer.deserialize(record)
 
-        puts y(result)
-
         refute_nil result
         
         assert_equal 'ORole',   result[:class]
 
         refute_nil  result[:structure]
-        refute_nil  result[:structure]['byte']
+
+        result[:structure].tap do |s|
+            assert_equal :byte, s['byte']
+            assert_equal :binary, s['buffer']
+            assert_equal :integer, s['id']
+            assert_equal :float, s['float']
+            assert_equal :double, s['double']
+            assert_equal :time, s['lastUpdate']
+            assert_equal :long, s['bignum']
+            assert_equal :decimal, s['bigdec']
+            assert_equal :collection, s['properties']
+        end
 
         result[:document].tap do |d|
             assert_equal 0,         d['id']
@@ -67,6 +76,8 @@ class TestDeserializer7 < MiniTest::Unit::TestCase
             d['properties'].tap do |f|
                 assert f.is_a?(Array), "expected Array, but got #{f.class}"
                 assert_equal 2, f.length
+
+                refute_nil f[0][:structure]
 
                 f[0][:document].tap do |p|
                     assert_equal 'mode',    p['name']
