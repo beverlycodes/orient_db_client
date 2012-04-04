@@ -8,8 +8,8 @@ Gem::Specification.new do |s|
   s.authors     = ["Ryan Fields"]
   s.email       = ["ryan.fields@twoleftbeats.com"]
   s.homepage    = ""
-  s.summary     = %q{TODO: Write a gem summary}
-  s.description = %q{TODO: Write a gem description}
+  s.summary     = %q{Network Binary Protocol client for OrientDB Server}
+  s.description = %q{This gem uses the OrientDB Network Binary Protocol to provide connectivity to an OrientDB Server}
 
   s.rubyforge_project = "orient_db_client"
 
@@ -18,9 +18,7 @@ Gem::Specification.new do |s|
   s.executables   = `git ls-files -- bin/*`.split("\n").map{ |f| File.basename(f) }
   s.require_paths = ["lib"]
 
-  # specify any dependencies here; for example:
   s.add_development_dependency "minitest"
   s.add_development_dependency "mocha"
   s.add_development_dependency "rake"
-  # s.add_runtime_dependency "rest-client"
 end
