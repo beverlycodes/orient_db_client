@@ -8,11 +8,11 @@ module OrientDbClient
             @@string_matcher = /^"[^"]*"$/
 
             def serialize(record)
-                if record[:document]
-                    serialize_document(record)
-                else
-                    throw "Incompatible record structure for serialization"
+                unless record[:document]
+                    record = { :document => record }
                 end
+
+                serialize_document(record)
             end
 
             private

@@ -2,6 +2,7 @@ require 'orient_db_client/network_message'
 require 'orient_db_client/version'
 require 'orient_db_client/deserializers/deserializer7'
 require 'orient_db_client/serializers/serializer7'
+require 'orient_db_client/exceptions'
 
 module OrientDbClient
 	module Protocols
@@ -100,7 +101,7 @@ module OrientDbClient
 					m.add :integer, 	NEW_SESSION
 					m.add :string, 		DRIVER_NAME
 					m.add :string, 		DRIVER_VERSION
-					m.add :short,		VERSION
+					m.add :short,		self.version
 					m.add :integer,		0
 					m.add :string, 		options[:user]
 					m.add :string, 		options[:password]
@@ -199,12 +200,18 @@ module OrientDbClient
 				  :message_content 	=> read_db_countrecords(socket) }
 			end
 
-			def self.db_create(socket, session, database, storage_type)
+			def self.db_create(socket, session, database, options = {})
+                if options.is_a?(String)
+                    options = { :storage_type => options }
+                end
+
+                options = { :storage_type => 'local' }.merge(options)
+
 				socket.write NetworkMessage.new { |m|
 					m.add :byte,	Operations::DB_CREATE
 					m.add :integer, session
 					m.add :string,	database
-					m.add :string,	storage_type
+					m.add :string,	options[:storage_type]
 				}.pack
 
 				read_response(socket)
@@ -243,7 +250,7 @@ module OrientDbClient
 					m.add :integer,	NEW_SESSION
 					m.add :string, 	DRIVER_NAME
 					m.add :string, 	DRIVER_VERSION
-					m.add :short,	VERSION
+					m.add :short,	self.version
 					m.add :integer,	0
 					m.add :string,	database
 					m.add :string, 	options[:user]
@@ -328,6 +335,14 @@ module OrientDbClient
 			end
 
 			def self.record_update(socket, session, cluster_id, cluster_position, record, version = VersionControl::NONE)
+				if version.is_a?(Symbol)
+					version = case version
+						when :none then VersionControl::NONE
+						when :incremental then VersionControl::INCREMENTAL
+						else VersionControl::NONE
+					end
+				end
+
 				socket.write NetworkMessage.new { |m|
 					m.add :byte,	Operations::RECORD_UPDATE
 					m.add :integer,	session
@@ -351,6 +366,10 @@ module OrientDbClient
 
 			def self.serializer
 				return OrientDbClient::Serializers::Serializer7.new
+			end
+
+			def self.version
+				self::VERSION
 			end
 
 			private
@@ -484,7 +503,7 @@ module OrientDbClient
 			end
 
 			def self.read_record_delete(socket)
-				{ :payload_status => read_byte(socket) }
+				{ :result => read_byte(socket) }
 			end
 
 			def self.read_record_load(socket)
@@ -492,10 +511,8 @@ module OrientDbClient
 
 				while (status = read_byte(socket)) != PayloadStatuses::NO_RECORDS
 					case status
-					when PayloadStatuses::NULL
-						result = result || nil
 					when PayloadStatuses::RESULTSET
-						record = read_record(socket)
+						record = record || read_record(socket)
 
 						case record[:record_type]
 						when 'd'.ord
@@ -504,7 +521,6 @@ module OrientDbClient
 						else
 							throw "Unsupported record type: #{record[:record_type]}"
 						end
-						break
 					else
 						throw "Unsupported payload status: #{status}"
 					end
@@ -532,9 +548,13 @@ module OrientDbClient
 						:exception_class => read_string(socket),
 						:exception_message => read_string(socket)
 					}
-				end 
+				end
 
-				raise ProtocolError.new(session, *exceptions)
+				if exceptions[0] && exceptions[0][:exception_class] == "com.orientechnologies.orient.core.exception.ORecordNotFoundException"
+					raise RecordNotFound.new(session)
+				else
+					raise ProtocolError.new(session, *exceptions)
+				end
 			end
 
 			def self.read_short(socket)
@@ -543,7 +563,8 @@ module OrientDbClient
 
 			def self.read_string(socket)
 				length = read_integer(socket)
-				data = length > 0 ? socket.read(length) : nil
+				
+				length > 0 ? socket.read(length) : nil
 			end
 		end
 	end

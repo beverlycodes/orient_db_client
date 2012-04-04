@@ -522,7 +522,7 @@ class TestProtocol7 < MiniTest::Unit::TestCase
 
     result = @protocol.record_delete(@socket, @session, cluster_id, cluster_position, version)
 
-    assert_equal 1, result[:message_content][:payload_status]
+    assert_equal 1, result[:message_content][:result]
   end
 
   def test_record_load
@@ -542,7 +542,6 @@ class TestProtocol7 < MiniTest::Unit::TestCase
     chain = [
       pack_byte(@protocol::Statuses::OK),
       pack_integer(@session),
-      pack_byte(@protocol::PayloadStatuses::NULL),
       pack_byte(@protocol::PayloadStatuses::NO_RECORDS)
     ].map! &SOCKET_RECV_EXPECTATION
 

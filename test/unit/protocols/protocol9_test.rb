@@ -89,6 +89,35 @@ class TestProtocol9 < MiniTest::Unit::TestCase
     assert_nil  result[:message_content][0]
   end
 
+  def test_db_create
+    storage_type = 'local'
+    database_type = 'document'
+
+    request = OrientDbClient::NetworkMessage.new { |m|
+      m.add :byte,    @protocol::Operations::DB_CREATE
+      m.add :integer, @session
+      m.add :string,  @database
+      m.add :string,  database_type
+      m.add :string,  storage_type
+    }.pack
+
+    socket_receives(request)
+
+    chain = [
+      pack_byte(@protocol::Statuses::OK),
+      pack_integer(@session)
+    ].map! &SOCKET_RECV_EXPECTATION
+
+    expect_sequence @socket, chain, 'response'
+
+    result = @protocol.db_create(@socket, @session, @database, {
+      :database_type => database_type,
+      :storage_type => storage_type
+    })
+
+    assert_equal @session, result[:session]
+  end
+
   def test_record_load
     cluster_id = 3
     cluster_position = 6
@@ -107,7 +136,6 @@ class TestProtocol9 < MiniTest::Unit::TestCase
     chain = [
       pack_byte(@protocol::Statuses::OK),
       pack_integer(@session),
-      pack_byte(@protocol::PayloadStatuses::NULL),
       pack_byte(@protocol::PayloadStatuses::NO_RECORDS)
     ].map! &SOCKET_RECV_EXPECTATION
 

@@ -18,6 +18,22 @@ class TestDatabaseSession < MiniTest::Unit::TestCase
 		@connection.close if @connection
 	end
 
+  def ensure_cluster_exists(session, cluster_name)
+    if session.cluster_exists?(cluster_name)
+      cluster = session.get_cluster(cluster_name)
+      cluster[:id]
+    else
+      session.create_physical_cluster(cluster_name)
+    end
+  end
+
+  def ensure_cluster_does_not_exist(session, cluster_name)
+    if session.cluster_exists?(cluster_name)
+      session.delete_cluster(session.get_cluster(cluster_name)[:id]) 
+      session.reload     # I know.  Ridiculous
+    end
+  end
+
   # The protocol documentation for DB_CLOSE is very ambiguous.
   # As such, this test doesn't really do anything that makes sense...
   def test_close
@@ -73,41 +89,51 @@ class TestDatabaseSession < MiniTest::Unit::TestCase
   end
 
   def test_create_cluster
-    new_cluster = nil
+    cluster = "OTest"
+    ensure_cluster_does_not_exist(@session, cluster)
 
-    if @session.cluster_exists?("OTest")
-      cluster = @session.get_cluster("OTest")
-      @session.delete_cluster(cluster[:id])
-    end
+    new_cluster = @session.create_physical_cluster(cluster)
 
-    result = @session.create_physical_cluster("OTest")
+    assert_equal 6, new_cluster
 
-    result[:message_content].tap do |m|
-      refute_nil m[:new_cluster_number]
-      assert_equal 6, m[:new_cluster_number]
-
-      new_cluster = m[:new_cluster_number]
-    end
-
-    assert @session.cluster_exists?("OTest")
+    assert @session.cluster_exists?(cluster)
 
     # Cleanup
     # FIXME: Necessary due to lack of DB clean strategy
     @session.delete_cluster(new_cluster) unless new_cluster.nil?
   end
 
+  def test_create_and_delete_record
+    cluster = "OTest"
+
+    ensure_cluster_exists(@session, cluster)
+    @session.reload
+
+    cluster_id = @session.get_cluster(cluster)[:id]
+    record = { :key1 => "value1" }
+
+    rid = @session.create_record(cluster_id, record)
+    created_record = @session.load_record(rid)
+
+    assert_equal cluster_id, rid.cluster_id
+    assert_equal 0, rid.cluster_position
+
+    refute_nil created_record
+    refute_nil created_record[:document]['key1']
+
+    assert_equal record[:key1], created_record[:document]['key1']
+
+    assert @session.delete_record(rid, created_record[:record_version])
+    assert_nil @session.load_record(rid)
+
+    ensure_cluster_does_not_exist(@session, cluster)
+  end
+
   def test_delete_cluster
     # FIXME: Messy due to lack of a proper DB load/clean strategy
 
-    if @session.cluster_exists?("OTest")
-      cluster = @session.get_cluster("OTest")
-      cluster_id = cluster[:id]
-    else
-      create_result = @session.create_physical_cluster("OTest")
-
-      cluster_id = create_result[:message_content][:new_cluster_number]
-    end
-    
+    cluster_id = ensure_cluster_exists(@session, "OTest")
+   
     result = @session.delete_cluster(cluster_id)
 
     refute @session.cluster_exists?("OTest")
@@ -157,46 +183,40 @@ class TestDatabaseSession < MiniTest::Unit::TestCase
   end
 
   def test_load_record
-    result = @session.load_record("#4:0")
+    record = @session.load_record("#4:0")
 
-    assert_equal @session.id, result[:session]
+    assert_equal 4, record[:cluster_id]
+    assert_equal 0, record[:cluster_position]
 
-    result[:message_content].tap do |record|
-      assert_equal 4, record[:cluster_id]
-      assert_equal 0, record[:cluster_position]
+    record[:document].tap do |doc|
+      assert_equal 'admin', doc['name']
+      assert_equal 'ACTIVE', doc['status']
 
-      record[:document].tap do |doc|
-        assert_equal 'admin', doc['name']
-        assert_equal 'ACTIVE', doc['status']
+      doc['roles'].tap do |roles|
+        assert roles.is_a?(Array), "expected Array, but got #{roles.class}"
 
-        doc['roles'].tap do |roles|
-          assert roles.is_a?(Array), "expected Array, but got #{roles.class}"
-
-          assert roles[0].is_a?(OrientDbClient::Rid)
-          assert_equal 3, roles[0].cluster_id
-          assert_equal 0, roles[0].cluster_position
-        end
+        assert roles[0].is_a?(OrientDbClient::Rid)
+        assert_equal 3, roles[0].cluster_id
+        assert_equal 0, roles[0].cluster_position
       end
     end
   end
 
   def test_reload
-    # FIXME: Messy due to lack of a proper DB load/clean strategy
-    if @session.cluster_exists?("OTest")
-      @session.delete_cluster(@session.get_cluster("OTest")[:id]) 
-      @session.reload     # I know.  Ridiculous
-    end
+    cluster = "OTest"
 
-    assert_nil @session.get_cluster("OTest")
-    @session.create_physical_cluster("OTest")
+    # FIXME: Messy due to lack of a proper DB load/clean strategy
+    ensure_cluster_does_not_exist(@session, cluster)
+
+    assert_nil @session.get_cluster(cluster)
+    @session.create_physical_cluster(cluster)
 
     @session.reload
 
-    refute_nil @session.get_cluster("OTest")
+    refute_nil @session.get_cluster(cluster)
 
     # Cleanup
     # FIXME: Necessary due to lack of DB clean strategy
-    @session.delete_cluster(@session.get_cluster("OTest")[:id])
+    @session.delete_cluster(@session.get_cluster(cluster)[:id])
   end
-
 end

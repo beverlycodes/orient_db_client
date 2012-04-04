@@ -22,14 +22,16 @@ class TestServerSession < MiniTest::Unit::TestCase
   	refute @session.database_exists?("InvalidDatabase")
   end
 
-  def test_create_and_delete_database_commands
-  	database = "test_create_database"
+  def test_create_and_delete_local_database_commands
+  	database = "test_create_local_database"
+
+    @session.delete_database(database) if @session.database_exists?(database)
 
   	begin
-  		@session.create_database(database)
+  		@session.create_local_database(database)
   		assert @session.database_exists?(database)
   	ensure
-  			@session.delete_database(database) if @session.database_exists?(database)
+  		@session.delete_database(database) if @session.database_exists?(database)
   	end
   end
 end

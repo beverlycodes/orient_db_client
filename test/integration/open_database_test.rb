@@ -21,8 +21,8 @@ class TestOpenDatabase < MiniTest::Unit::TestCase
 
     refute_nil session.id
 
-    refute_nil session.cluster("orids")
-    refute_nil session.cluster("ouser")
-    refute_nil session.cluster("orole")
+    refute_nil session.get_cluster("orids")
+    refute_nil session.get_cluster("ouser")
+    refute_nil session.get_cluster("orole")
   end
 end

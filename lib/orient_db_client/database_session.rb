@@ -36,8 +36,24 @@ module OrientDbClient
 			@clusters.values
 		end
 
+		def create_record(cluster_id, record)
+			@connection.create_record(@id, cluster_id, record)
+		end
+
 		def delete_cluster(cluster_id)
 			@connection.delete_cluster(@id, cluster_id)
+		end
+
+		def delete_record(rid_or_cluster_id, cluster_position_or_version, version = nil)
+			if rid_or_cluster_id.is_a?(Fixnum)
+				rid = OrientDbClient::Rid.new(rid_or_cluster_id, cluster_position)
+				version = version
+			else
+				rid = rid_or_cluster_id
+				version = cluster_position_or_version
+			end
+			
+			@connection.delete_record(@id, rid, version)
 		end
 
 		def get_cluster(id)
@@ -52,12 +68,28 @@ module OrientDbClient
 			@connection.get_cluster_datarange(@id, cluster_id)
 		end
 
-		def load_record(rid)
-			@connection.load_record(@id, rid)
+		def load_record(rid_or_cluster_id, cluster_position = nil)
+			if rid_or_cluster_id.is_a?(Fixnum)
+				rid_or_cluster_id = OrientDbClient::Rid.new(rid_or_cluster_id, cluster_position)
+			end
+			
+			@connection.load_record(@id, rid_or_cluster_id)[:message_content]
 		end
 
 		def reload
 			@connection.reload(@id)
+		end
+
+		def update_record(record, rid_or_cluster_id, cluster_position_or_version, version = nil)
+			if rid_or_cluster_id.is_a?(Fixnum)
+				rid = OrientDbClient::Rid.new(rid_or_cluster_id, cluster_position)
+				version = version
+			else
+				rid = rid_or_cluster_id
+				version = cluster_position_or_version
+			end
+			
+			@connection.update_record(@id, rid, record, version)
 		end
 
 		private

@@ -52,16 +52,20 @@ module OrientDbClient
     end
 
     def create_database(session, database, options = {})
-      options = {
-        :type => "graph",         # Will be used in protocol version 8
-        :storage_type => "local"
-      }.merge(options)
-
-      @protocol.db_create(@socket, session, database, options[:storage_type])
+      @protocol.db_create(@socket, session, database, options)
     end
 
     def create_cluster(session, type, options)
-      @protocol.datacluster_add(@socket, session, type, options)
+      result = @protocol.datacluster_add(@socket, session, type, options)
+
+      result[:message_content][:new_cluster_number]
+    end
+
+    def create_record(session, cluster_id, record)
+      response = @protocol.record_create(@socket, session, cluster_id, record)
+      message_content = response[:message_content]
+
+      OrientDbClient::Rid.new(message_content[:cluster_id], message_content[:cluster_position])
     end
 
     def database_exists?(session, database)
@@ -76,6 +80,12 @@ module OrientDbClient
 
     def delete_cluster(session, cluster_id)
       @protocol.datacluster_remove(@socket, session, cluster_id)
+    end
+
+    def delete_record(session, rid, version)
+      response = @protocol.record_delete(@socket, session, rid.cluster_id, rid.cluster_position, version)
+
+      response[:message_content][:result] == 1
     end
 
     def get_cluster_datarange(session, cluster_id)
@@ -120,6 +130,12 @@ module OrientDbClient
       @sessions.values.each do |s|
         s.send :store_clusters, clusters
       end
+    end
+
+    def update_record(session, rid, record, version)
+      response = @protocol.record_update(@socket, session, rid.cluster_id, rid.cluster_position, record, version)
+
+      response[:message_content][:record_version]
     end
   end
 end
