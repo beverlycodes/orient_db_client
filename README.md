@@ -5,7 +5,7 @@ This gem is a very rough initial attempt at a Network Binary Protocol driver for
 
 While in this early stage of development, the public interface is subject to change with no warning.
 
-This is my first attempt a building a gem intended for public use.  Expect some difficulty getting this gem up and running in your projects.
+This is my first attempt at building a gem intended for public use.  Expect some difficulty getting this gem up and running in your projects.
 
 
 Supported OrientDB Releases
