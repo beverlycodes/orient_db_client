@@ -41,12 +41,12 @@ module OrientDbClient
 		end
 
 		def delete_record(rid_or_cluster_id, cluster_position_or_version, version = nil)
-			if rid_or_cluster_id.is_a?(Fixnum)
-				rid = OrientDbClient::Rid.new(rid_or_cluster_id, cluster_position)
-				version = version
-			else
+			if rid_or_cluster_id.is_a?(OrientDbClient::Rid)
 				rid = rid_or_cluster_id
-				version = cluster_position_or_version
+				version = cluster_position_or_version.to_i
+			else
+				rid = OrientDbClient::Rid.new(rid_or_cluster_id.to_i, cluster_position_or_version.to_i)
+				version = version
 			end
 			
 			@connection.delete_record(@id, rid, version)
