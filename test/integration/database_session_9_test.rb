@@ -26,8 +26,8 @@ class TestDatabaseSession < MiniTest::Unit::TestCase
     refute @connection.closed?
   end
 
-  def test_command
-    result = @session.command("SELECT FROM OUser")
+  def test_query
+    result = @session.query("SELECT FROM OUser")
 
     assert_equal @session.id, result[:session]
 

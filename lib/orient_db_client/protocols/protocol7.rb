@@ -66,14 +66,25 @@ module OrientDbClient
 			DRIVER_NAME 	= 'OrientDB Ruby Client'.freeze
 			DRIVER_VERSION 	= OrientDbClient::VERSION
 
+			COMMAND_CLASS = 'com.orientechnologies.orient.core.sql.OCommandSQL'.freeze
+			QUERY_CLASS = 'com.orientechnologies.orient.core.sql.query.OSQLSynchQuery'.freeze
+
 			NEW_SESSION = -1
 
 			def self.command(socket, session, command, options = {})
 				options = {
 					:async =>				false,	# Async mode is not supported yet
-					:query_class_name => 	'com.orientechnologies.orient.core.sql.query.OSQLSynchQuery',
+					:query_class_name => QUERY_CLASS,
 					:limit =>				-1
 				}.merge(options);
+
+				if options[:query_class_name].is_a?(Symbol)
+					options[:query_class_name] = case options[:query_class_name]
+						when :query then QUERY_CLASS
+						when :command then COMMAND_CLASS
+						else throw "Unsupported command class: #{options[:query_class_name]}"
+					end
+				end
 
 				serialized_command = NetworkMessage.new { |m|
 					m.add :string,		options[:query_class_name]

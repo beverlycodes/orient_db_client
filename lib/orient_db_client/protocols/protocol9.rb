@@ -8,9 +8,18 @@ module OrientDbClient
 
             def self.command(socket, session, command, options = {})
                 options[:query_class_name].tap do |qcn|
-                    if qcn.nil? || qcn == 'com.orientechnologies.orient.core.sql.query.OSQLSynchQuery'
-                        options[:query_class_name] = 'q' 
+                    if qcn.is_a?(Symbol)
+                        qcn = case qcn
+                            when :query then 'q'
+                            when :command then 'c'
+                        end
                     end
+
+                    if qcn.nil? || qcn == 'com.orientechnologies.orient.core.sql.query.OSQLSynchQuery'
+                        qcn = 'q' 
+                    end
+
+                    options[:query_class_name] = qcn
                 end
 
                 super socket, session, command, options

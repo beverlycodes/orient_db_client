@@ -43,10 +43,6 @@ module OrientDbClient
       result
     end
 
-    def command(session, text, options = {})
-      @protocol.command(@socket, session, text, options)
-    end
-
     def count(session, cluster_name)
       @protocol.count(@socket, session, cluster_name)
     end
@@ -122,6 +118,11 @@ module OrientDbClient
 
       @sessions[session] = DatabaseSession.new(message_content[:session], self, message_content[:clusters])
   	end
+
+    def query(session, text, options = {})
+      options[:query_class_name] = :query
+      @protocol.command(@socket, session, text, options)
+    end
 
     def reload(session)
       result = @protocol.db_reload(@socket, session)

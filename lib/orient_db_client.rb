@@ -6,7 +6,8 @@ require "socket"
 
 module OrientDbClient
 	def connect(host, options = {})
-		options = { port: 2424 }.merge(options)
+    options[:port] = options[:port].to_i
+    options[:port] = 2424 if options[:port] == 0
 
 		s = TCPSocket.open(host, options[:port])
 

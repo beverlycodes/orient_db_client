@@ -18,10 +18,6 @@ module OrientDbClient
 			@connection.cluster_exists?(@id, cluster_id)
 		end
 
-		def command(text, options = {})
-			@connection.command(@id, text, options)
-		end
-
 		def count(cluster_name)
 			@connection.count(@id, cluster_name)
 		end
@@ -74,6 +70,10 @@ module OrientDbClient
 			end
 			
 			@connection.load_record(@id, rid_or_cluster_id)[:message_content]
+		end
+
+		def query(text, options = {})
+			@connection.query(@id, text, options)
 		end
 
 		def reload
