@@ -36,7 +36,7 @@ module OrientDbClient
         when 'java.lang.IndexOutOfBoundsException', 'java.lang.IllegalArgumentException'
           result = false
         else
-          throw err
+          raise err
         end
       end
 

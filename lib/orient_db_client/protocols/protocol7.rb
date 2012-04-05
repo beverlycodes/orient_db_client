@@ -82,7 +82,7 @@ module OrientDbClient
 					options[:query_class_name] = case options[:query_class_name]
 						when :query then QUERY_CLASS
 						when :command then COMMAND_CLASS
-						else throw "Unsupported command class: #{options[:query_class_name]}"
+						else raise "Unsupported command class: #{options[:query_class_name]}"
 					end
 				end
 
@@ -419,7 +419,7 @@ module OrientDbClient
 						:record_version 	=> read_integer(socket),
 						:bytes				=> read_string(socket) })
 				else
-					throw "Unsupported record format: #{record[:format]}"
+					raise "Unsupported record format: #{record[:format]}"
 				end
 			end
 
@@ -435,7 +435,7 @@ module OrientDbClient
 						result.concat collection
 						break
 					else
-						throw "Unsupported payload status: #{status}"
+						raise "Unsupported payload status: #{status}"
 					end
 				end
 
@@ -530,10 +530,10 @@ module OrientDbClient
 							result = result || record
 							result[:document] = deserializer.deserialize(record[:bytes])[:document]
 						else
-							throw "Unsupported record type: #{record[:record_type]}"
+							raise "Unsupported record type: #{record[:record_type]}"
 						end
 					else
-						throw "Unsupported payload status: #{status}"
+						raise "Unsupported payload status: #{status}"
 					end
 				end
 
