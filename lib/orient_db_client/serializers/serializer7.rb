@@ -172,11 +172,7 @@ module OrientDbClient
                 if value.is_a?(OrientDbClient::Rid)
                     serialize_rid(value)
                 elsif value.is_a?(String)
-                    if value.encoding.equal?(binary_encoding)
-                        serialize_binary(value)
-                    else
-                        serialize_string(value)
-                    end
+                    serialize_string(value)
                 elsif value.is_a?(Fixnum)
                     serialize_integer(value)
                 elsif value.is_a?(TrueClass)

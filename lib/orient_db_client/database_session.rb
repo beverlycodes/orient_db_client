@@ -80,9 +80,9 @@ module OrientDbClient
 			@connection.reload(@id)
 		end
 
-		def update_record(record, rid_or_cluster_id, cluster_position_or_version, version = nil)
+		def update_record(record, rid_or_cluster_id, cluster_position_or_version, version = :none)
 			if rid_or_cluster_id.is_a?(Fixnum)
-				rid = OrientDbClient::Rid.new(rid_or_cluster_id, cluster_position)
+				rid = OrientDbClient::Rid.new(rid_or_cluster_id, cluster_position_or_version)
 				version = version
 			else
 				rid = rid_or_cluster_id
