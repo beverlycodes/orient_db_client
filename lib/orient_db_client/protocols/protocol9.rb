@@ -31,21 +31,10 @@ module OrientDbClient
                 end
 
                 options = {
-                    :database_type => 'document',
-                    :storage_type => 'local'
+                    :database_type => 'document'
                 }.merge(options)
 
-                socket.write NetworkMessage.new { |m|
-                    m.add :byte,    Operations::DB_CREATE
-                    m.add :integer, session
-                    m.add :string,  database
-                    m.add :string,  options[:database_type]
-                    m.add :string,  options[:storage_type]
-                }.pack
-
-                read_response(socket)
-
-                { :session => read_integer(socket) }
+                super
             end
 
             def self.db_open(socket, database, options = {})
@@ -83,6 +72,23 @@ module OrientDbClient
                 { :session          => read_integer(socket),
                   :message_content  => read_record_load(socket) }
             end
+
+            private
+
+            def self.make_db_create_message(*args)
+                session = args.shift
+                database = args.shift
+                options = args.shift
+
+                NetworkMessage.new { |m|
+                    m.add :byte,    Operations::DB_CREATE
+                    m.add :integer, session
+                    m.add :string,  database
+                    m.add :string,  options[:database_type].to_s
+                    m.add :string,  options[:storage_type].to_s
+                }
+            end
+
         end
     end
 end

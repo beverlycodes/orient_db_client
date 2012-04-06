@@ -212,18 +212,15 @@ module OrientDbClient
 			end
 
 			def self.db_create(socket, session, database, options = {})
-                if options.is_a?(String)
-                    options = { :storage_type => options }
-                end
+        if options.is_a?(String) || options.is_a?(Symbol)
+            options = { :storage_type => options }
+        end
 
-                options = { :storage_type => 'local' }.merge(options)
+        options = { :storage_type => 'local' }.merge(options)
 
-				socket.write NetworkMessage.new { |m|
-					m.add :byte,	Operations::DB_CREATE
-					m.add :integer, session
-					m.add :string,	database
-					m.add :string,	options[:storage_type]
-				}.pack
+        options[:storage_type] = options[:storage_type].to_s
+
+				socket.write make_db_create_message(session, database, options).pack
 
 				read_response(socket)
 
@@ -384,6 +381,19 @@ module OrientDbClient
 			end
 
 			private
+
+			def self.make_db_create_message(*args)
+				session = args.shift
+				database = args.shift
+				options = args.shift
+
+				NetworkMessage.new { |m|
+					m.add :byte,		Operations::DB_CREATE
+					m.add :integer, session
+					m.add :string,	database
+					m.add :string,	options[:storage_type].to_s
+				}
+			end
 
 			def self.read_byte(socket)
 				socket.read(1).unpack('C').first

@@ -9,7 +9,7 @@ class TestSerializer7 < MiniTest::Unit::TestCase
         record = {
             :class => 'OClass',
             :structure => {
-                'buffer'                => :binary,
+                :buffer                 => :binary,
                 'true'                  => :boolean,
                 'false'                 => :boolean,
                 'byte'                  => :byte,

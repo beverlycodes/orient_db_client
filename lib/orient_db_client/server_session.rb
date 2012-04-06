@@ -3,7 +3,15 @@ require 'orient_db_client/session'
 module OrientDbClient
 	class ServerSession < Session
 		def create_local_database(database, options = {})
-			@connection.create_database(@id, database)
+			options[:storage_type] = :local
+
+			@connection.create_database(@id, database, options)
+		end
+
+		def create_memory_database(database, options = {})
+			options[:storage_type] = :memory
+
+			@connection.create_database(@id, database, options)
 		end
 
 		def database_exists?(database)

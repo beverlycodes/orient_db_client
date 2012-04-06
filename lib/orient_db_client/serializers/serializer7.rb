@@ -35,7 +35,8 @@ module OrientDbClient
                 end
 
                 document.each do |k, v|
-                    result << "#{k}:#{serialize_item(v, structure[k])}"
+                    key_struct = structure[k.to_s] || structure[k.to_sym]
+                    result << "#{k}:#{serialize_item(v, key_struct)}"
                 end
 
                 serialized_document = "#{recordClass}#{result.join(",")}"
@@ -109,6 +110,8 @@ module OrientDbClient
                     serialize_double(value)
                 when :float
                     serialize_float(value)
+                when :integer
+                    serialize_integer(value)
                 when :long
                     serialize_long(value)
                 when :map
