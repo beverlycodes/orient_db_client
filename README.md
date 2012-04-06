@@ -49,7 +49,7 @@ When you're done with the connection (and all of the sessions you have opened wi
 
 A server session is only needed when an application wants to create, delete, or confirm the existence of a database.
 
-To obtain a server session, call #open_server on the connection.  This requires user credentials from the `&lt;users&gt;` section of the OrientDB server's `orientdb-server-config.xml` file.
+To obtain a server session, call #open_server on the connection.  This requires user credentials from the `<users>` section of the OrientDB server's `orientdb-server-config.xml` file.
 
     server = connection.open_server({
         :user => 'root',
