@@ -17,7 +17,7 @@ I've tested this against OrientDB-1.0rc9 which is the current official release a
 Supported Ruby Versions
 ---------------------------
 
-This gem has only been tested on 1.9.3.  It *should* run on any 1.9 install, and will definitely NOT run on 1.8 due to the use of Encoding.  Compatibility with 1.8 is planned, but not scheduled for any particular milestone yet.
+This gem has only been tested on 1.9.2 and 1.9.3.  It *should* run on any 1.9 install, and will definitely NOT run on 1.8 due to the use of Encoding.  Compatibility with 1.8 is planned, but not scheduled for any particular milestone yet.
 
 
 Basic Usage
