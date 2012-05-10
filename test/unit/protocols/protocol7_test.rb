@@ -46,6 +46,9 @@ class TestProtocol7 < MiniTest::Unit::TestCase
         :type => 'LOGICAL' } ]
 
     @socket = mock()
+    @socket.stubs(:pos)
+    @socket.stubs(:write)
+    @socket.stubs(:read).with(0).returns('')
 	end
 
   def socket_receives(request)
@@ -53,18 +56,10 @@ class TestProtocol7 < MiniTest::Unit::TestCase
   end
 
   def test_connect
-    request = OrientDbClient::NetworkMessage.new { |m|
-      m.add :byte,    @protocol::Operations::CONNECT
-      m.add :integer, @protocol::NEW_SESSION
-      m.add :string,  @driver_name
-      m.add :string,  @driver_version
-      m.add :short,   @protocol_version
-      m.add :string,  nil #client-id
-      m.add :string,  @user
-      m.add :string,  @password
-    }.pack
+    inputs = sequence('inputs')
 
-    socket_receives(request)
+    @socket.expects(:write).once.with(pack_string(@user)).in_sequence(inputs)
+    @socket.expects(:write).once.with(pack_string(@password)).in_sequence(inputs)
 
     chain = [
       pack_byte(@protocol::Statuses::OK),
@@ -87,13 +82,10 @@ class TestProtocol7 < MiniTest::Unit::TestCase
     cluster_name = "vertexes"
     record_count = 1564
 
-    request = OrientDbClient::NetworkMessage.new { |m|
-      m.add :byte,    @protocol::Operations::COUNT
-      m.add :integer, @session
-      m.add :string,  cluster_name
-    }.pack
+    inputs = sequence('inputs')
 
-    socket_receives(request)
+    @socket.expects(:write).once.with(pack_integer(@session)).in_sequence(inputs)
+    @socket.expects(:write).once.with(pack_string(cluster_name)).in_sequence(inputs)
 
     chain = [
       pack_byte(@protocol::Statuses::OK),
@@ -111,21 +103,14 @@ class TestProtocol7 < MiniTest::Unit::TestCase
   def test_command
     command_string = 'SELECT FROM OUser'
 
-    command = OrientDbClient::NetworkMessage.new { |m|
-      m.add :string,  'com.orientechnologies.orient.core.sql.query.OSQLSynchQuery'
-      m.add :string,  command_string
-      m.add :integer, -1
-      m.add :integer, 0
-    }.pack
+    command = @protocol::QueryMessage.new :query_class_name => 'com.orientechnologies.orient.core.sql.query.OSQLSynchQuery',
+                                          :text => command_string
 
-    request = OrientDbClient::NetworkMessage.new { |m| 
-      m.add :byte,    @protocol::Operations::COMMAND
-      m.add :integer, @session
-      m.add :byte,    's'
-      m.add :string,  command
-    }.pack
-
-    socket_receives(request)
+    inputs = sequence('inputs')
+    @socket.expects(:write).with(pack_byte(@protocol::Operations::COMMAND)).in_sequence(inputs)
+    @socket.expects(:write).with(pack_integer(@session)).in_sequence(inputs)
+    @socket.expects(:write).with(pack_byte('s'.ord)).in_sequence(inputs)
+    @socket.expects(:write).with(pack_string(command.to_binary_s)).in_sequence(inputs)
 
     chain = [
       pack_byte(@protocol::Statuses::OK),
@@ -151,14 +136,11 @@ class TestProtocol7 < MiniTest::Unit::TestCase
 
     new_cluster_number = 20
 
-    request = OrientDbClient::NetworkMessage.new { |m|
-      m.add :byte,    @protocol::Operations::DATACLUSTER_ADD
-      m.add :integer, @session
-      m.add :string,  type.to_s.upcase
-      m.add :integer, container  
-    }.pack
-
-    socket_receives(request)
+    inputs = sequence('inputs')
+    @socket.expects(:write).with(pack_byte(@protocol::Operations::DATACLUSTER_ADD)).in_sequence(inputs)
+    @socket.expects(:write).with(pack_integer(@session)).in_sequence(inputs)
+    @socket.expects(:write).with(pack_string('LOGICAL')).in_sequence(inputs)
+    @socket.expects(:write).with(pack_integer(container)).in_sequence(inputs)
 
     chain = [
       { :param => Sizes::BYTE,    :return => pack_byte(@protocol::Statuses::OK) },
@@ -182,14 +164,11 @@ class TestProtocol7 < MiniTest::Unit::TestCase
 
     new_cluster_number = 6
 
-    request = OrientDbClient::NetworkMessage.new { |m|
-      m.add :byte,    @protocol::Operations::DATACLUSTER_ADD
-      m.add :integer, @session
-      m.add :string,  type.to_s.upcase
-      m.add :string,  name
-    }.pack
-
-    socket_receives(request)
+    inputs = sequence('inputs')
+    @socket.expects(:write).with(pack_byte(@protocol::Operations::DATACLUSTER_ADD)).in_sequence(inputs)
+    @socket.expects(:write).with(pack_integer(@session)).in_sequence(inputs)
+    @socket.expects(:write).with(pack_string('MEMORY')).in_sequence(inputs)
+    @socket.expects(:write).with(pack_string(name)).in_sequence(inputs)
 
     chain = [
       { :param => Sizes::BYTE,    :return => pack_byte(@protocol::Statuses::OK) },
@@ -215,16 +194,13 @@ class TestProtocol7 < MiniTest::Unit::TestCase
 
     new_cluster_number = 10
 
-    request = OrientDbClient::NetworkMessage.new { |m|
-      m.add :byte,    @protocol::Operations::DATACLUSTER_ADD
-      m.add :integer, @session
-      m.add :string,  type
-      m.add :string,  name  
-      m.add :string,  file_name
-      m.add :integer, size
-    }.pack
-
-    socket_receives(request)
+    inputs = sequence('inputs')
+    @socket.expects(:write).with(pack_byte(@protocol::Operations::DATACLUSTER_ADD)).in_sequence(inputs)
+    @socket.expects(:write).with(pack_integer(@session)).in_sequence(inputs)
+    @socket.expects(:write).with(pack_string('PHYSICAL')).in_sequence(inputs)
+    @socket.expects(:write).with(pack_string(name)).in_sequence(inputs)
+    @socket.expects(:write).with(pack_string(file_name)).in_sequence(inputs)
+    @socket.expects(:write).with(pack_integer(size)).in_sequence(inputs)
 
     chain = [
       { :param => Sizes::BYTE,    :return => pack_byte(@protocol::Statuses::OK) },
@@ -249,13 +225,10 @@ class TestProtocol7 < MiniTest::Unit::TestCase
     range_begin = 0
     range_end = 1000
 
-    request = OrientDbClient::NetworkMessage.new { |m|
-      m.add :byte,    @protocol::Operations::DATACLUSTER_DATARANGE
-      m.add :integer, @session
-      m.add :short,   cluster_id
-    }.pack
-
-    socket_receives(request)
+    inputs = sequence('inputs')
+    @socket.expects(:write).with(pack_byte(@protocol::Operations::DATACLUSTER_DATARANGE)).in_sequence(inputs)
+    @socket.expects(:write).with(pack_integer(@session)).in_sequence(inputs)
+    @socket.expects(:write).with(pack_short(cluster_id)).in_sequence(inputs)
 
     chain = [
       { :param => Sizes::BYTE,    :return => pack_byte(@protocol::Statuses::OK) },
@@ -276,13 +249,10 @@ class TestProtocol7 < MiniTest::Unit::TestCase
   def test_datacluster_remove
     id = 10
 
-    request = OrientDbClient::NetworkMessage.new { |m|
-      m.add :byte,    @protocol::Operations::DATACLUSTER_REMOVE
-      m.add :integer, @session
-      m.add :short,   id
-    }.pack
-
-    socket_receives(request)
+    inputs = sequence('inputs')
+    @socket.expects(:write).with(pack_byte(@protocol::Operations::DATACLUSTER_REMOVE)).in_sequence(inputs)
+    @socket.expects(:write).with(pack_integer(@session)).in_sequence(inputs)
+    @socket.expects(:write).with(pack_short(id)).in_sequence(inputs)
 
     chain = [
       { :param => Sizes::BYTE,    :return => pack_byte(@protocol::Statuses::OK) },
@@ -299,12 +269,10 @@ class TestProtocol7 < MiniTest::Unit::TestCase
   end
 
   def test_db_close
-    request = OrientDbClient::NetworkMessage.new { |m|
-      m.add :byte,    @protocol::Operations::DB_CLOSE
-      m.add :integer, @session
-    }.pack
+    inputs = sequence('inputs')
+    @socket.expects(:write).with(pack_byte(@protocol::Operations::DB_CLOSE)).in_sequence(inputs)
+    @socket.expects(:write).with(pack_integer(@session)).in_sequence(inputs)
 
-    socket_receives(request)
     @socket.expects(:closed?).returns(true)
 
     result = @protocol.db_close(@socket, @session)
@@ -315,12 +283,9 @@ class TestProtocol7 < MiniTest::Unit::TestCase
   def test_db_countrecords
     count = 26345
 
-    request = OrientDbClient::NetworkMessage.new { |m|
-      m.add :byte,    @protocol::Operations::DB_COUNTRECORDS
-      m.add :integer, @session
-    }.pack
-
-    socket_receives(request)
+    inputs = sequence('inputs')
+    @socket.expects(:write).with(pack_byte(@protocol::Operations::DB_COUNTRECORDS)).in_sequence(inputs)
+    @socket.expects(:write).with(pack_integer(@session)).in_sequence(inputs)
 
     chain = [
       { :param => Sizes::BYTE,    :return => pack_byte(@protocol::Statuses::OK) },
@@ -339,14 +304,11 @@ class TestProtocol7 < MiniTest::Unit::TestCase
   def test_db_create
     storage_type = 'local'
 
-    request = OrientDbClient::NetworkMessage.new { |m|
-      m.add :byte,    @protocol::Operations::DB_CREATE
-      m.add :integer, @session
-      m.add :string,  @database
-      m.add :string,  storage_type
-    }.pack
-
-    socket_receives(request)
+    inputs = sequence('inputs')
+    @socket.expects(:write).with(pack_byte(@protocol::Operations::DB_CREATE)).in_sequence(inputs)
+    @socket.expects(:write).with(pack_integer(@session)).in_sequence(inputs)
+    @socket.expects(:write).with(pack_string(@database)).in_sequence(inputs)
+    @socket.expects(:write).with(pack_string(storage_type)).in_sequence(inputs)
 
     chain = [
       pack_byte(@protocol::Statuses::OK),
@@ -361,13 +323,10 @@ class TestProtocol7 < MiniTest::Unit::TestCase
   end
 
   def test_db_delete
-    request = OrientDbClient::NetworkMessage.new { |m|
-      m.add :byte,    @protocol::Operations::DB_DELETE
-      m.add :integer, @session
-      m.add :string,  @database
-    }.pack
-
-    socket_receives(request)
+    inputs = sequence('inputs')
+    @socket.expects(:write).with(pack_byte(@protocol::Operations::DB_DELETE)).in_sequence(inputs)
+    @socket.expects(:write).with(pack_integer(@session)).in_sequence(inputs)
+    @socket.expects(:write).with(pack_string(@database)).in_sequence(inputs)
 
     chain = [
       { :param => Sizes::BYTE,    :return => pack_byte(@protocol::Statuses::OK) },
@@ -382,13 +341,10 @@ class TestProtocol7 < MiniTest::Unit::TestCase
   end
 
   def test_db_exist
-    request = OrientDbClient::NetworkMessage.new { |m|
-      m.add :byte,    @protocol::Operations::DB_EXIST
-      m.add :integer, @session
-      m.add :string,  @database
-    }.pack
-
-    socket_receives(request)
+    inputs = sequence('inputs')
+    @socket.expects(:write).with(pack_byte(@protocol::Operations::DB_EXIST)).in_sequence(inputs)
+    @socket.expects(:write).with(pack_integer(@session)).in_sequence(inputs)
+    @socket.expects(:write).with(pack_string(@database)).in_sequence(inputs)
 
     chain = [
       { :param => Sizes::BYTE,    :return => pack_byte(@protocol::Statuses::OK) },
@@ -405,19 +361,15 @@ class TestProtocol7 < MiniTest::Unit::TestCase
   end
 
   def test_db_open
-    request = OrientDbClient::NetworkMessage.new { |m|
-      m.add :byte,    @protocol::Operations::DB_OPEN
-      m.add :integer, @protocol::NEW_SESSION
-      m.add :string,  @driver_name
-      m.add :string,  @driver_version
-      m.add :short,   @protocol_version
-      m.add :string,  nil #client-id
-      m.add :string,  @database
-      m.add :string,  @user
-      m.add :string,  @password
-    }.pack
-
-    socket_receives(request)
+    inputs = sequence('inputs')
+    @socket.expects(:write).with(pack_byte(@protocol::Operations::DB_OPEN)).in_sequence(inputs)
+    @socket.expects(:write).with(pack_integer(@protocol::NEW_SESSION)).in_sequence(inputs)
+    @socket.expects(:write).with(pack_string(@driver_name)).in_sequence(inputs)
+    @socket.expects(:write).with(pack_string(@driver_version)).in_sequence(inputs)
+    @socket.expects(:write).with(pack_short(@protocol_version)).in_sequence(inputs)
+    @socket.expects(:write).with(pack_string(@database)).in_sequence(inputs)
+    @socket.expects(:write).with(pack_string(@user)).in_sequence(inputs)
+    @socket.expects(:write).with(pack_string(@password)).in_sequence(inputs)
 
     # recv chain
     chain = [
@@ -471,16 +423,13 @@ class TestProtocol7 < MiniTest::Unit::TestCase
       }
     }
 
-    request = OrientDbClient::NetworkMessage.new { |m|
-      m.add :byte,    @protocol::Operations::RECORD_CREATE
-      m.add :integer, @session
-      m.add :short,   cluster_id
-      m.add :string,  @protocol.serializer.serialize(record)
-      m.add :byte,    'd'.ord
-      m.add :byte,    @protocol::SyncModes::SYNC
-    }.pack
-
-    socket_receives(request)
+    inputs = sequence('inputs')
+    @socket.expects(:write).with(pack_byte(@protocol::Operations::RECORD_CREATE)).in_sequence(inputs)
+    @socket.expects(:write).with(pack_integer(@session)).in_sequence(inputs)
+    @socket.expects(:write).with(pack_short(cluster_id)).in_sequence(inputs)
+    @socket.expects(:write).with(pack_string(@protocol.serializer.serialize(record))).in_sequence(inputs)
+    @socket.expects(:write).with(pack_byte('d'.ord)).in_sequence(inputs)
+    @socket.expects(:write).with(pack_byte(@protocol::SyncModes::SYNC)).in_sequence(inputs)
 
     chain = [
       pack_byte(@protocol::Statuses::OK),
@@ -501,16 +450,13 @@ class TestProtocol7 < MiniTest::Unit::TestCase
     cluster_position = 1726
     version = 0
 
-    request = OrientDbClient::NetworkMessage.new { |m|
-      m.add :byte,    @protocol::Operations::RECORD_DELETE
-      m.add :integer, @session
-      m.add :short,   cluster_id
-      m.add :long,    cluster_position
-      m.add :integer, version
-      m.add :byte,    @protocol::SyncModes::SYNC
-    }.pack
-
-    socket_receives(request)
+    inputs = sequence('inputs')
+    @socket.expects(:write).with(pack_byte(@protocol::Operations::RECORD_DELETE)).in_sequence(inputs)
+    @socket.expects(:write).with(pack_integer(@session)).in_sequence(inputs)
+    @socket.expects(:write).with(pack_short(cluster_id)).in_sequence(inputs)
+    @socket.expects(:write).with(pack_long(cluster_position)).in_sequence(inputs)
+    @socket.expects(:write).with(pack_integer(version)).in_sequence(inputs)
+    @socket.expects(:write).with(pack_byte(@protocol::SyncModes::SYNC)).in_sequence(inputs)
 
     chain = [
       pack_byte(@protocol::Statuses::OK),
@@ -529,15 +475,11 @@ class TestProtocol7 < MiniTest::Unit::TestCase
     cluster_id = 3
     cluster_position = 6
 
-    request = OrientDbClient::NetworkMessage.new { |m|
-      m.add :byte,    @protocol::Operations::RECORD_LOAD
-      m.add :integer, @session
-      m.add :short,   cluster_id
-      m.add :long,    cluster_position
-      m.add :string,  ""
-    }.pack
-
-    socket_receives(request)
+    inputs = sequence('inputs')
+    @socket.expects(:write).with(pack_byte(@protocol::Operations::RECORD_LOAD)).in_sequence(inputs)
+    @socket.expects(:write).with(pack_integer(@session)).in_sequence(inputs)
+    @socket.expects(:write).with(pack_short(cluster_id)).in_sequence(inputs)
+    @socket.expects(:write).with(pack_long(cluster_position)).in_sequence(inputs)
 
     chain = [
       pack_byte(@protocol::Statuses::OK),
@@ -566,18 +508,15 @@ class TestProtocol7 < MiniTest::Unit::TestCase
       }
     }
 
-    request = OrientDbClient::NetworkMessage.new { |m|
-      m.add :byte,    @protocol::Operations::RECORD_UPDATE
-      m.add :integer, @session
-      m.add :short,   cluster_id
-      m.add :long,    cluster_position
-      m.add :string,  @protocol.serializer.serialize(record)
-      m.add :integer, record_version_policy
-      m.add :byte,    'd'.ord
-      m.add :byte,    @protocol::SyncModes::SYNC
-    }.pack
-
-    socket_receives(request)
+    inputs = sequence('inputs')
+    @socket.expects(:write).with(pack_byte(@protocol::Operations::RECORD_UPDATE)).in_sequence(inputs)
+    @socket.expects(:write).with(pack_integer(@session)).in_sequence(inputs)
+    @socket.expects(:write).with(pack_short(cluster_id)).in_sequence(inputs)
+    @socket.expects(:write).with(pack_long(cluster_position)).in_sequence(inputs)
+    @socket.expects(:write).with(pack_string(@protocol.serializer.serialize(record))).in_sequence(inputs)
+    @socket.expects(:write).with(pack_integer(record_version_policy)).in_sequence(inputs)
+    @socket.expects(:write).with(pack_byte('d'.ord)).in_sequence(inputs)
+    @socket.expects(:write).with(pack_byte(@protocol::SyncModes::SYNC)).in_sequence(inputs)
 
     chain = [
       pack_byte(@protocol::Statuses::OK),
@@ -593,12 +532,9 @@ class TestProtocol7 < MiniTest::Unit::TestCase
   end
 
   def test_db_reload
-    request = OrientDbClient::NetworkMessage.new { |m|
-      m.add :byte,    @protocol::Operations::DB_RELOAD
-      m.add :integer, @session
-    }.pack
-
-    socket_receives(request)
+    inputs = sequence('inputs')
+    @socket.expects(:write).with(pack_byte(@protocol::Operations::DB_RELOAD)).in_sequence(inputs)
+    @socket.expects(:write).with(pack_integer(@session)).in_sequence(inputs)
 
     # recv chain
     chain = [
@@ -636,12 +572,9 @@ class TestProtocol7 < MiniTest::Unit::TestCase
   def test_db_size
     size = 1563467
 
-    request = OrientDbClient::NetworkMessage.new { |m|
-      m.add :byte,    @protocol::Operations::DB_SIZE
-      m.add :integer, @session
-    }.pack
-
-    socket_receives(request)
+    inputs = sequence('inputs')
+    @socket.expects(:write).with(pack_byte(@protocol::Operations::DB_SIZE)).in_sequence(inputs)
+    @socket.expects(:write).with(pack_integer(@session)).in_sequence(inputs)
 
     chain = [
       { :param => Sizes::BYTE,    :return => pack_byte(@protocol::Statuses::OK) },

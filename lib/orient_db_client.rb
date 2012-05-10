@@ -11,9 +11,9 @@ module OrientDbClient
 
 		s = TCPSocket.open(host, options[:port])
 
-		protocol = s.read(2).unpack('s>').first
+    protocol = BinData::Int16be.read(s)
 
-		Connection.new(s, protocol)
+		Connection.new(s, options[:protocol] || protocol)
 	end
 	module_function :connect
 end

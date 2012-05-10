@@ -12,7 +12,7 @@ module ConnectionHelper
     begin
       TCPSocket.stubs(:open).returns(mock_socket)
 
-      mock_socket.stubs(:read).returns([version].pack('s>'))
+      mock_socket.stubs(:read).returns(BinData::Int16be.new(version).to_binary_s)
       mock_socket.stubs(:close)
 
       connection = connect_to_orientdb({})

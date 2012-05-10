@@ -1,5 +1,8 @@
+require "bindata"
+
 module OrientDbClient
 	class NetworkMessage 
+
 		def initialize(&block)
 			@components = []
 

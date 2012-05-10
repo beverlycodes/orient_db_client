@@ -4,6 +4,8 @@ require 'orient_db_client/deserializers/deserializer7'
 require 'orient_db_client/serializers/serializer7'
 require 'orient_db_client/exceptions'
 
+require 'bindata'
+
 module OrientDbClient
 	module Protocols
 		class Protocol7
@@ -71,6 +73,227 @@ module OrientDbClient
 
 			NEW_SESSION = -1
 
+			class ProtocolString < BinData::Primitive
+				endian		:big
+				
+				int32		:len,	  :value => lambda { data.length }
+				string 	:data,	:read_length => :len
+
+				def get;   self.data; end
+				def set(v) self.data = v; end
+  		end
+
+  		class QueryMessage < BinData::Record
+  			endian :big
+
+				protocol_string		:query_class_name
+				protocol_string		:text
+				int32 						:non_text_limit,			:initial_value => -1
+				int32 						:serialized_params,		:value => 0
+  		end
+
+			module Commands
+				class Command < BinData::Record
+					endian :big
+
+					int8		 				:operation, 			:value => Operations::COMMAND
+					int32 					:session
+					int8 						:mode,						:initial_value => 's'.ord
+
+					protocol_string	:command_serialized
+				end
+
+				class Connect < BinData::Record
+					endian :big
+
+					int8		 				:operation, 			:value => Operations::CONNECT
+					int32 					:session,					:value => NEW_SESSION
+					protocol_string :driver,					:value => DRIVER_NAME
+					protocol_string	:driver_version,	:value => DRIVER_VERSION
+					int16						:version
+					protocol_string	:client_id
+					protocol_string	:user
+					protocol_string :password
+				end
+
+				class Count < BinData::Record
+					endian :big
+
+					int8 						:operation,				:value => Operations::COUNT
+					int32 					:session
+					protocol_string	:cluster_name
+				end
+
+				class DataclusterAddLogical < BinData::Record
+					endian :big
+
+					int8 						:operation,				:value => Operations::DATACLUSTER_ADD
+					int32 					:session
+					protocol_string	:type, 						:value => 'LOGICAL'
+
+					int32 					:physical_cluster_container_id
+				end
+
+				class DataclusterAddMemory < BinData::Record
+					endian :big
+
+					int8 						:operation,				:value => Operations::DATACLUSTER_ADD
+					int32 					:session
+					protocol_string	:type, 						:value => 'MEMORY'
+
+					protocol_string	:name
+				end
+
+				class DataclusterAddPhysical < BinData::Record
+					endian :big
+
+					int8 						:operation,				:value => Operations::DATACLUSTER_ADD
+					int32 					:session
+					protocol_string	:type, 						:value => 'PHYSICAL'
+
+					protocol_string	:name
+					protocol_string :file_name
+					int32 					:initial_size,		:initial_value => -1
+				end
+
+				class DataclusterDatarange < BinData::Record
+					endian :big
+
+					int8 		:operation,	:value => Operations::DATACLUSTER_DATARANGE
+					int32 	:session
+					int16 	:cluster_id
+				end
+
+				class DataclusterRemove < BinData::Record
+					endian :big
+
+					int8 		:operation, :value =>	Operations::DATACLUSTER_REMOVE
+					int32 	:session
+					Int16 	:cluster_id
+				end
+
+				class DbClose < BinData::Record
+					endian :big
+
+					int8 	:operation, :value =>	Operations::DB_CLOSE
+					int32 :session
+				end
+
+				class DbCountRecords < BinData::Record
+					endian :big
+
+					int8 	:operation, :value =>	Operations::DB_COUNTRECORDS
+					int32 :session
+				end
+
+				class DbCreate < BinData::Record
+					endian :big
+
+					int8		 				:operation, 			:value => Operations::DB_CREATE
+					int32 					:session
+
+					protocol_string :database
+					protocol_string :storage_type
+				end
+
+				class DbDelete < BinData::Record
+					endian :big
+
+					int8		 				:operation, 			:value => Operations::DB_DELETE
+					int32 					:session
+
+					protocol_string :database
+				end
+
+				class DbExist < BinData::Record
+					endian :big
+
+					int8		 				:operation, 			:value => Operations::DB_EXIST
+					int32 					:session
+
+					protocol_string :database
+				end
+
+				class DbOpen < BinData::Record
+					endian :big
+
+					int8		 				:operation, 			:value => Operations::DB_OPEN
+					int32 					:session,					:value => NEW_SESSION
+
+					protocol_string :driver,					:value => DRIVER_NAME
+					protocol_string	:driver_version,	:value => DRIVER_VERSION
+					int16						:version
+					protocol_string	:client_id
+					protocol_string :database
+					protocol_string	:user
+					protocol_string :password
+				end
+
+				class DbReload < BinData::Record
+					endian :big
+
+					int8 	:operation, :value =>	Operations::DB_RELOAD
+					int32 :session
+				end
+
+				class DbSize < BinData::Record
+					endian :big
+
+					int8 	:operation, :value =>	Operations::DB_SIZE
+					int32 :session
+				end
+
+				class RecordCreate < BinData::Record
+					endian :big
+
+					int8 							:operation,				:value =>	Operations::RECORD_CREATE
+					int32 						:session
+
+					int16 						:cluster_id
+					protocol_string		:record_content
+					int8 							:record_type,			:value => RecordTypes::DOCUMENT
+					int8 							:mode,						:value => SyncModes::SYNC
+				end
+
+				class RecordDelete < BinData::Record
+					endian :big
+
+					int8 	:operation,					:value =>	Operations::RECORD_DELETE
+					int32 :session
+
+					int16 :cluster_id
+					int64 :cluster_position
+					int32 :record_version
+					int8 	:mode,							:value => SyncModes::SYNC
+				end
+
+				class RecordLoad < BinData::Record
+					endian :big
+
+					int8 						:operation,					:value =>	Operations::RECORD_LOAD
+					int32 					:session
+
+					int16 					:cluster_id
+					int64 					:cluster_position
+					protocol_string	:fetch_plan
+				end
+
+				class RecordUpdate < BinData::Record
+					endian :big
+
+					int8 						:operation,					:value =>	Operations::RECORD_UPDATE
+					int32 					:session
+
+					int16 					:cluster_id
+					int64 					:cluster_position
+
+					protocol_string :record_content
+					int32 					:record_version
+					int8 						:record_type,				:value => RecordTypes::DOCUMENT
+					int8 						:mode,							:value => SyncModes::SYNC
+				end
+			end
+
 			def self.command(socket, session, command, options = {})
 				options = {
 					:async =>				false,	# Async mode is not supported yet
@@ -86,19 +309,15 @@ module OrientDbClient
 					end
 				end
 
-				serialized_command = NetworkMessage.new { |m|
-					m.add :string,		options[:query_class_name]
-					m.add :string,		command
-					m.add :integer,		options[:non_text_limit] || options[:limit]
-					m.add :integer,		0
-				}.pack
+				query = QueryMessage.new :query_class_name => options[:query_class_name],
+																 :text => command,
+																 :non_text_limit => options[:non_text_limit] || options[:limit]
 
-				socket.write NetworkMessage.new { |m|
-					m.add :byte, 		Operations::COMMAND
-					m.add :integer, 	session
-					m.add :byte, 		options[:async] ? 'a' : 's'
-					m.add :string,		serialized_command
-				}.pack
+				command = Commands::Command.new :session => session,
+																				:mode => options[:async] ? 'a'.ord : 's'.ord,
+																				:command_serialized => query.to_binary_s
+
+				command.write(socket)
 
 				read_response(socket)
 
@@ -107,16 +326,10 @@ module OrientDbClient
 			end
 
 			def self.connect(socket, options = {})
-				socket.write NetworkMessage.new { |m|
-					m.add :byte, 		Operations::CONNECT
-					m.add :integer, 	NEW_SESSION
-					m.add :string, 		DRIVER_NAME
-					m.add :string, 		DRIVER_VERSION
-					m.add :short,		self.version
-					m.add :integer,		0
-					m.add :string, 		options[:user]
-					m.add :string, 		options[:password]
-				}.pack
+				command = Commands::Connect.new :version => self.version,
+																				:user => options[:user],
+																				:password => options[:password]
+				command.write(socket)
 
 				read_response(socket)
 
@@ -125,11 +338,10 @@ module OrientDbClient
 			end
 
 			def self.count(socket, session, cluster_name)
-				socket.write NetworkMessage.new { |m|
-					m.add :byte, 		Operations::COUNT
-					m.add :integer, 	session
-					m.add :string, 		cluster_name
-				}.pack
+				command = Commands::Count.new :session => session,
+																				:cluster_name => cluster_name
+
+				command.write(socket)
 
 				read_response(socket)
 
@@ -138,25 +350,23 @@ module OrientDbClient
 			end
 
 			def self.datacluster_add(socket, session, type, options)
-				socket.write NetworkMessage.new { |m|
-					type = type.downcase.to_sym if type.is_a?(String)
-					type_string = type.to_s.upcase
+				type = type.downcase.to_sym if type.is_a?(String)
 
-					m.add :byte, 	Operations::DATACLUSTER_ADD
-					m.add :integer,	session
-					m.add :string,	type_string
+				case type
+				when :physical
+					command = Commands::DataclusterAddPhysical.new :session => session,
+																												 :name => options[:name],
+																												 :file_name => options[:file_name],
+																												 :initial_size => options[:initial_size] || -1
+				when :logical
+					command = Commands::DataclusterAddLogical.new :session => session,
+																												:physical_cluster_container_id => options[:physical_cluster_container_id]
+				when :memory
+					command = Commands::DataclusterAddMemory.new :session => session,
+																											 :name => options[:name]
+				end
 
-					case type
-						when :physical
-							m.add :string,	options[:name]
-							m.add :string,	options[:file_name]
-							m.add :integer,	options[:initial_size] || -1
-						when :logical
-							m.add :integer,	options[:physical_cluster_container_id]
-						when :memory
-							m.add :string,	options[:name]
-					end
-				}.pack
+				command.write(socket)
 
 				read_response(socket)
 
@@ -165,11 +375,10 @@ module OrientDbClient
 			end
 
 			def self.datacluster_datarange(socket, session, cluster_id)
-				socket.write NetworkMessage.new { |m|
-					m.add :byte, 	Operations::DATACLUSTER_DATARANGE
-					m.add :integer,	session
-					m.add :short,	cluster_id
-				}.pack
+				command = Commands::DataclusterDatarange.new :session => session,
+																										 :cluster_id => cluster_id
+
+				command.write(socket)
 
 				read_response(socket)
 
@@ -178,11 +387,9 @@ module OrientDbClient
 			end
 
 			def self.datacluster_remove(socket, session, cluster_id)
-				socket.write NetworkMessage.new { |m|
-					m.add :byte, 	Operations::DATACLUSTER_REMOVE
-					m.add :integer,	session
-					m.add :short,	cluster_id
-				}.pack
+				command = Commands::DataclusterRemove.new :session => session,
+																										 :cluster_id => cluster_id
+				command.write(socket)
 
 				read_response(socket)
 
@@ -191,19 +398,15 @@ module OrientDbClient
 			end
 
 			def self.db_close(socket, session = NEW_SESSION)
-				socket.write NetworkMessage.new { |m|
-					m.add :byte,	Operations::DB_CLOSE
-					m.add :integer,	session
-				}.pack
+				command = Commands::DbClose.new :session => session
+				command.write(socket)
 
 				return socket.closed?
 			end
 
 			def self.db_countrecords(socket, session)
-				socket.write NetworkMessage.new { |m|
-					m.add :byte,	Operations::DB_COUNTRECORDS
-					m.add :integer, session
-				}.pack
+				command = Commands::DbCountRecords.new :session => session
+				command.write(socket)
 
 				read_response(socket)
 
@@ -220,7 +423,7 @@ module OrientDbClient
 
         options[:storage_type] = options[:storage_type].to_s
 
-				socket.write make_db_create_message(session, database, options).pack
+				make_db_create_command(session, database, options).write(socket)
 
 				read_response(socket)
 
@@ -228,11 +431,9 @@ module OrientDbClient
 			end
 
 			def self.db_delete(socket, session, database)
-				socket.write NetworkMessage.new { |m|
-					m.add :byte, 	Operations::DB_DELETE
-					m.add :integer,	session
-					m.add :string,	database
-				}.pack
+				command = Commands::DbDelete.new :session => session,
+																							 :database => database
+				command.write(socket)
 
 				read_response(socket)
 
@@ -240,11 +441,9 @@ module OrientDbClient
 			end
 
 			def self.db_exist(socket, session, database)
-				socket.write NetworkMessage.new { |m|
-					m.add :byte, 	Operations::DB_EXIST
-					m.add :integer,	session
-					m.add :string,	database
-				}.pack
+				command = Commands::DbExist.new :session => session,
+																				 :database => database
+				command.write(socket)
 
 				read_response(socket)
 
@@ -253,17 +452,11 @@ module OrientDbClient
 			end
 
 			def self.db_open(socket, database, options = {})
-				socket.write NetworkMessage.new { |m|
-					m.add :byte,	Operations::DB_OPEN
-					m.add :integer,	NEW_SESSION
-					m.add :string, 	DRIVER_NAME
-					m.add :string, 	DRIVER_VERSION
-					m.add :short,	self.version
-					m.add :integer,	0
-					m.add :string,	database
-					m.add :string, 	options[:user]
-					m.add :string,	options[:password]
-				}.pack
+				command = Commands::DbOpen.new :version => self.version,
+																			 :database => database,
+																			 :user => options[:user],
+																			 :password => options[:password]
+				command.write(socket)
 
 				read_response(socket)
 
@@ -272,10 +465,8 @@ module OrientDbClient
 			end
 
 			def self.db_reload(socket, session)
-				socket.write NetworkMessage.new { |m|
-					m.add :byte,	Operations::DB_RELOAD
-					m.add :integer,	session
-				}.pack
+				command = Commands::DbReload.new :session => session
+				command.write(socket)
 
 				read_response(socket)
 
@@ -284,10 +475,8 @@ module OrientDbClient
 			end
 
 			def self.db_size(socket, session)
-				socket.write NetworkMessage.new { |m|
-					m.add :byte,	Operations::DB_SIZE
-					m.add :integer,	session
-				}.pack
+				command = Commands::DbSize.new :session => session
+				command.write(socket)
 
 				read_response(socket)
 
@@ -296,14 +485,10 @@ module OrientDbClient
 			end
 
 			def self.record_create(socket, session, cluster_id, record)
-				socket.write NetworkMessage.new { |m|
-					m.add :byte,	Operations::RECORD_CREATE
-					m.add :integer,	session
-					m.add :short,	cluster_id
-					m.add :string,	serializer.serialize(record)
-					m.add :byte,	RecordTypes::DOCUMENT
-					m.add :byte,	SyncModes::SYNC
-				}.pack
+				command = Commands::RecordCreate.new :session => session,
+																						 :cluster_id => cluster_id,
+																						 :record_content => serializer.serialize(record)
+				command.write(socket)
 
 				read_response(socket)
 
@@ -312,14 +497,11 @@ module OrientDbClient
 			end
 
 			def self.record_delete(socket, session, cluster_id, cluster_position, version)
-				socket.write NetworkMessage.new { |m|
-					m.add :byte,	Operations::RECORD_DELETE
-					m.add :integer,	session
-					m.add :short,	cluster_id
-					m.add :long,	cluster_position
-					m.add :integer,	version
-					m.add :byte,	SyncModes::SYNC
-				}.pack
+				command = Commands::RecordDelete.new :session => session,
+																						 :cluster_id => cluster_id,
+																						 :cluster_position => cluster_position,
+																						 :record_version => version
+				command.write(socket)
 
 				read_response(socket)
 
@@ -328,13 +510,10 @@ module OrientDbClient
 			end
 
 			def self.record_load(socket, session, rid)
-				socket.write NetworkMessage.new { |m|
-					m.add :byte,	Operations::RECORD_LOAD
-					m.add :integer,	session
-					m.add :short,	rid.cluster_id
-					m.add :long,	rid.cluster_position
-					m.add :string,	""
-				}.pack
+				command = Commands::RecordLoad.new :session => session,
+																					 :cluster_id => rid.cluster_id,
+																					 :cluster_position => rid.cluster_position
+				command.write(socket)
 
 				read_response(socket)
 
@@ -351,16 +530,12 @@ module OrientDbClient
 					end
 				end
 
-				socket.write NetworkMessage.new { |m|
-					m.add :byte,	Operations::RECORD_UPDATE
-					m.add :integer,	session
-					m.add :short,	cluster_id
-					m.add :long,	cluster_position
-					m.add :string,	serializer.serialize(record)
-					m.add :integer,	version
-					m.add :byte,	RecordTypes::DOCUMENT
-					m.add :byte,	SyncModes::SYNC
-				}.pack
+				command = Commands::RecordUpdate.new :session => session,
+																					 :cluster_id => cluster_id,
+																					 :cluster_position => cluster_position,
+																					 :record_content => serializer.serialize(record),
+																					 :record_version => version
+				command.write(socket)
 
 				read_response(socket)
 
@@ -382,21 +557,18 @@ module OrientDbClient
 
 			private
 
-			def self.make_db_create_message(*args)
+			def self.make_db_create_command(*args)
 				session = args.shift
 				database = args.shift
 				options = args.shift
 
-				NetworkMessage.new { |m|
-					m.add :byte,		Operations::DB_CREATE
-					m.add :integer, session
-					m.add :string,	database
-					m.add :string,	options[:storage_type].to_s
-				}
+				Commands::DbCreate.new :session => session,
+															 :database => database,
+															 :storage_type => options[:storage_type]
 			end
 
 			def self.read_byte(socket)
-				socket.read(1).unpack('C').first
+				BinData::Int8.read(socket).to_i
 			end
 
 			def self.read_count(socket)
@@ -492,11 +664,11 @@ module OrientDbClient
 			end
 
 			def self.read_integer(socket)
-				socket.read(4).unpack('l>').first
+				BinData::Int32be.read(socket).to_i
 			end
 
 			def self.read_long(socket)
-				socket.read(8).unpack('q>').first
+				BinData::Int64be.read(socket).to_i
 			end
 
 			def self.read_record(socket)
@@ -579,13 +751,17 @@ module OrientDbClient
 			end
 
 			def self.read_short(socket)
-				socket.read(2).unpack('s>').first
+				BinData::Int16be.read(socket).to_i
 			end
 
 			def self.read_string(socket)
-				length = read_integer(socket)
-				
-				length > 0 ? socket.read(length) : nil
+				bin_length = read_integer(socket)
+				return nil if bin_length < 0
+
+				raise bin_length.inspect if bin_length < 0
+
+				bin_str = socket.read(bin_length)
+				bin_str.length > 0 ? bin_str : nil
 			end
 		end
 	end
