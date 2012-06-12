@@ -12,7 +12,8 @@ module OrientDbClient
 			'7' => Protocols::Protocol7,
       '9' => Protocols::Protocol9,
       '10' => Protocols::Protocol9,
-      '11' => Protocols::Protocol9
+      '11' => Protocols::Protocol9,
+      '12' => Protocols::Protocol9
 		}
 
 		def self.get_protocol(version)
