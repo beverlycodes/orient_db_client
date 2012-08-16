@@ -18,9 +18,9 @@ Gem::Specification.new do |s|
   s.executables   = `git ls-files -- bin/*`.split("\n").map{ |f| File.basename(f) }
   s.require_paths = ["lib"]
 
-  s.add_dependency "bindata"
+  s.add_dependency "bindata", "~> 1.4.0"
 
-  s.add_development_dependency "minitest"
-  s.add_development_dependency "mocha"
+  s.add_development_dependency "minitest", "~> 3.1.0"
+  s.add_development_dependency "mocha", "~> 0.12.0"
   s.add_development_dependency "rake"
 end

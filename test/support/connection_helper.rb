@@ -6,8 +6,8 @@ module ConnectionHelper
   end
 
   def mock_connect_to_orientdb(version, socket = nil)
-    mock_socket = socket || MiniTest::Mock.new
-    connection = nil
+    mock_socket = socket || mock()
+    mock_socket.stubs(:pos).returns(false)
 
     begin
       TCPSocket.stubs(:open).returns(mock_socket)
