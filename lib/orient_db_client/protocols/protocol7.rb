@@ -408,6 +408,7 @@ module OrientDbClient
 			end
 
 			def self.db_close(socket, session = NEW_SESSION)
+			  return true if socket.closed?
 				command = Commands::DbClose.new :session => session
 				command.write(socket)
 
@@ -496,14 +497,7 @@ module OrientDbClient
 			
 			def self.config_get(socket, session, config_name)
 			  
-        if options.is_a?(String) || options.is_a?(Symbol)
-            options = { :storage_type => options }
-        end
         
-        options = { :storage_type => 'local' }.merge(options)
-
-        options[:storage_type] = options[:storage_type].to_s
-
         config = Commands::ConfigGet.new :session => session,
                                          :config_name => config_name
           

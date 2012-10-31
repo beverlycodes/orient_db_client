@@ -25,6 +25,11 @@ class TestDatabaseSession < MiniTest::Unit::TestCase
 
     refute @connection.closed?
   end
+  
+
+  def test_config_get
+       @session.config_get(@session, "cache")
+  end
 
   def test_query
     result = @session.query("SELECT FROM OUser")

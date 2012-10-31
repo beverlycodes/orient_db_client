@@ -16,6 +16,8 @@ class TestServerSession < MiniTest::Unit::TestCase
 	def teardown
 		@connection.close if @connection
 	end
+	
+	
 
   def test_database_exists_command
   	assert @session.database_exists?(@options["database"])
