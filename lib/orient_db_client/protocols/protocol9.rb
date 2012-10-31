@@ -81,6 +81,7 @@ module OrientDbClient
       end
 
       def self.db_open(socket, database, options = {})
+        puts "Connecting to db ith version: #{self.version}"
         command = Commands::DbOpen9.new :protocol_version => self.version,
                                         :database_name => database,
                                         :database_type => options[:database_type] || 'document',

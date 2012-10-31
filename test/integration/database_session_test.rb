@@ -8,7 +8,6 @@ class TestDatabaseSession < MiniTest::Unit::TestCase
 
 	def setup
 		@options = SERVER_OPTIONS
-    debugger
 		@connection = connect_to_orientdb(SERVER_OPTIONS)
 
 		@session = @connection.open_database(@options["database"], {

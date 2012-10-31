@@ -605,7 +605,7 @@ module OrientDbClient
 
 				num_clusters = read_short(socket)
 				puts "We have this many clusters: #{num_clusters}"
-				num_clusters.times do |x|
+				(num_clusters).times do |x|
 				  print "Reading cluster: #{x}..."
 					
 					cluster = 
