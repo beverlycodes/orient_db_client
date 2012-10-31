@@ -34,6 +34,9 @@ module OrientDbClient
 				RECORD_DELETE			= 33
 				RECORD_LOAD				= 30
 				RECORD_UPDATE			= 32
+				CONFIG_GET        = 70
+				CONFIG_SET        = 71
+				CONFIG_LIST       = 72
 			end
 
 			module RecordTypes
@@ -482,6 +485,9 @@ module OrientDbClient
 
 				{ :session 			=> read_integer(socket),
 				  :message_content 	=> read_db_size(socket) }
+			end
+			
+			def self.config_get(socket, session)
 			end
 
 			def self.record_create(socket, session, cluster_id, record)
