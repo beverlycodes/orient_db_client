@@ -105,6 +105,13 @@ module OrientDbClient
 
 					protocol_string	:command_serialized
 				end
+				
+				class ConfigGet < BinData::Record
+				  endian :big
+				  int8            :operation,     :value => Operations::CONFIG_GET
+				  int32           :session  
+          protocol_string :config_name
+				end
 
 				class Connect < BinData::Record
 					endian :big
@@ -487,7 +494,25 @@ module OrientDbClient
 				  :message_content 	=> read_db_size(socket) }
 			end
 			
-			def self.config_get(socket, session)
+			def self.config_get(socket, session, config_name)
+			  
+        if options.is_a?(String) || options.is_a?(Symbol)
+            options = { :storage_type => options }
+        end
+        
+        options = { :storage_type => 'local' }.merge(options)
+
+        options[:storage_type] = options[:storage_type].to_s
+
+        config = Commands::ConfigGet.new :session => session,
+                                         :config_name => config_name
+          
+        config.write(socket)
+
+        read_response(socket)
+
+        { :value => read_string(socket) }
+			  
 			end
 
 			def self.record_create(socket, session, cluster_id, record)
