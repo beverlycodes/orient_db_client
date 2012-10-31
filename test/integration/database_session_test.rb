@@ -1,4 +1,6 @@
 require File.join File.dirname(__FILE__), '..', 'test_helper'
+  
+require 'debugger'
 
 class TestDatabaseSession < MiniTest::Unit::TestCase
 	include ServerConfig
@@ -6,12 +8,14 @@ class TestDatabaseSession < MiniTest::Unit::TestCase
 
 	def setup
 		@options = SERVER_OPTIONS
+    debugger
 		@connection = connect_to_orientdb(SERVER_OPTIONS)
 
 		@session = @connection.open_database(@options["database"], {
 			:user => @options["user"],
 			:password => @options["password"]
 		})
+		
 	end
 
 	def teardown

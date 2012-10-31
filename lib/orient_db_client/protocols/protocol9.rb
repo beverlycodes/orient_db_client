@@ -6,7 +6,7 @@ require 'bindata'
 module OrientDbClient
   module Protocols
     class Protocol9 < Protocol7
-      VERSION = 9
+      VERSION = 12
 
       module Commands
         class DbCreate9 < BinData::Record
