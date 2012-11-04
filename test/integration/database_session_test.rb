@@ -62,7 +62,7 @@ class TestDatabaseSession < MiniTest::Unit::TestCase
 
     result[0].tap do |record|
       assert_equal 0, record[:format]
-      assert_equal 4, record[:cluster_id]
+      assert_equal 5, record[:cluster_id]
       assert_equal 0, record[:cluster_position]
 
       record[:document].tap do |doc|
@@ -93,7 +93,7 @@ class TestDatabaseSession < MiniTest::Unit::TestCase
 
     new_cluster = @session.create_physical_cluster(cluster)
 
-    assert_equal 6, new_cluster
+    assert_equal 8, new_cluster
 
     assert @session.cluster_exists?(cluster)
 
@@ -189,7 +189,7 @@ class TestDatabaseSession < MiniTest::Unit::TestCase
 
     record[:document].tap do |doc|
       assert_equal 'admin', doc['name']
-      assert_equal 'ACTIVE', doc['status']
+      assert_equal 1, doc['mode']
 
       doc['roles'].tap do |roles|
         assert roles.is_a?(Array), "expected Array, but got #{roles.class}"

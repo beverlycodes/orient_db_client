@@ -604,10 +604,7 @@ module OrientDbClient
 				clusters = []
 
 				num_clusters = read_short(socket)
-				puts "We have this many clusters: #{num_clusters}"
 				(num_clusters).times do |x|
-				  print "Reading cluster: #{x}..."
-					
 					cluster = 
 					{
 						:name 	=> read_string(socket),
@@ -616,8 +613,6 @@ module OrientDbClient
 						:other => read_short(socket)
 					}
 					clusters << cluster
-					puts "Cluster: #{cluster}"
-					puts "done!"
 				
 				end
 
@@ -686,10 +681,8 @@ module OrientDbClient
 
 			def self.read_db_open(socket)
 			  session = read_integer(socket)
-			  puts "Session is: #{session}"
 			  clusters = read_clusters(socket)
-			  puts "Clusters is: #{clusters}"
-				{ :session 			=> session,
+			  { :session 			=> session,
 				  :clusters 		=> clusters,
 				  :cluster_config 	=> read_string(socket)	}
 			end
