@@ -103,7 +103,6 @@ module OrientDbClient
       end
       
       def self.config_get(socket, session, config_name)
-        # binding.pry
         config = Commands::ConfigGet.new :session => session,
                                          :config_name => config_name
   

@@ -11,10 +11,7 @@ module OrientDbClient
   	end
 
   	def close
-  	  if @socket.closed?
-  	    puts "It was already closed!"
-  	  end
-      @socket.close
+  	  @socket.close
   	end
   	
   	def config_get(session, config_name)
