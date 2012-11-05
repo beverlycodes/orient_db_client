@@ -110,7 +110,6 @@ module OrientDbClient
         config.write(socket)
   
         response = read_response(socket)
-        puts "Response: #{response.to_s}"
         { :session => read_integer(socket),
           :value => read_string(socket) }
   

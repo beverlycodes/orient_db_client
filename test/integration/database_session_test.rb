@@ -73,7 +73,7 @@ class TestDatabaseSession < MiniTest::Unit::TestCase
           assert roles.is_a?(Array), "expected Array, but got #{roles.class}"
 
           assert roles[0].is_a?(OrientDbClient::Rid)
-          assert_equal 3, roles[0].cluster_id
+          assert_equal 4, roles[0].cluster_id
           assert_equal 0, roles[0].cluster_position
         end
       end
@@ -190,14 +190,8 @@ class TestDatabaseSession < MiniTest::Unit::TestCase
     record[:document].tap do |doc|
       assert_equal 'admin', doc['name']
       assert_equal 1, doc['mode']
-
-      doc['roles'].tap do |roles|
-        assert roles.is_a?(Array), "expected Array, but got #{roles.class}"
-
-        assert roles[0].is_a?(OrientDbClient::Rid)
-        assert_equal 3, roles[0].cluster_id
-        assert_equal 0, roles[0].cluster_position
-      end
+      assert doc['rules'].is_a?(Hash), "expected Hash, but got #{doc['rules'].class}"
+      
     end
   end
 
