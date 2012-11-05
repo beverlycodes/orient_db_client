@@ -1,5 +1,4 @@
 require 'orient_db_client/network_message'
-require 'pry'
 require 'orient_db_client/version'
 require 'orient_db_client/deserializers/deserializer7'
 require 'orient_db_client/serializers/serializer7'
