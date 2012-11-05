@@ -1,4 +1,5 @@
 require 'orient_db_client/network_message'
+require 'pry'
 require 'orient_db_client/version'
 require 'orient_db_client/deserializers/deserializer7'
 require 'orient_db_client/serializers/serializer7'
@@ -104,13 +105,6 @@ module OrientDbClient
 					int8 						:mode,						:initial_value => 's'.ord
 
 					protocol_string	:command_serialized
-				end
-				
-				class ConfigGet < BinData::Record
-				  endian :big
-				  int8            :operation,     :value => Operations::CONFIG_GET
-				  int32           :session  
-          protocol_string :config_name
 				end
 
 				class Connect < BinData::Record
@@ -474,6 +468,8 @@ module OrientDbClient
 				{ :session 			=> read_integer(socket),
 				  :message_content 	=> read_db_open(socket)	}
 			end
+			
+     
 
 			def self.db_reload(socket, session)
 				command = Commands::DbReload.new :session => session
@@ -495,19 +491,7 @@ module OrientDbClient
 				  :message_content 	=> read_db_size(socket) }
 			end
 			
-			def self.config_get(socket, session, config_name)
-			  
-        
-        config = Commands::ConfigGet.new :session => session,
-                                         :config_name => config_name
-          
-        config.write(socket)
-
-        read_response(socket)
-
-        { :value => read_string(socket) }
-			  
-			end
+		
 
 			def self.record_create(socket, session, cluster_id, record)
 				command = Commands::RecordCreate.new :session => session,

@@ -9,6 +9,14 @@ module OrientDbClient
       VERSION = 12
 
       module Commands
+        
+        class ConfigGet < BinData::Record
+          endian :big
+          int8            :operation,     :value => Protocol7::Operations::CONFIG_GET
+          int32           :session  
+          protocol_string :config_name
+        end
+        
         class DbCreate9 < BinData::Record
           endian :big
 
@@ -92,6 +100,20 @@ module OrientDbClient
 
         { :session          => read_integer(socket),
           :message_content  => read_db_open(socket) }
+      end
+      
+      def self.config_get(socket, session, config_name)
+        # binding.pry
+        config = Commands::ConfigGet.new :session => session,
+                                         :config_name => config_name
+  
+        config.write(socket)
+  
+        response = read_response(socket)
+        puts "Response: #{response.to_s}"
+        { :session => read_integer(socket),
+          :value => read_string(socket) }
+  
       end
 
       def self.record_load(socket, session, rid, options = {})
