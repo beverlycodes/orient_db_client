@@ -13,6 +13,10 @@ module OrientDbClient
 
 			@connection.create_database(@id, database, options)
 		end
+		
+		def config_get(config_name)
+		  @connection.config_get(@id, config_name)
+		end
 
 		def database_exists?(database)
 			@connection.database_exists?(@id, database)

@@ -11,7 +11,11 @@ module OrientDbClient
   	end
 
   	def close
-      @socket.close
+  	  @socket.close
+  	end
+  	
+  	def config_get(session, config_name)
+  	  @protocol.config_get(@socket, session, config_name)
   	end
 
     def close_database(session)

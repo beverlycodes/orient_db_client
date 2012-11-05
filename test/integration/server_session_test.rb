@@ -16,10 +16,17 @@ class TestServerSession < MiniTest::Unit::TestCase
 	def teardown
 		@connection.close if @connection
 	end
+	
+	
 
   def test_database_exists_command
   	assert @session.database_exists?(@options["database"])
   	refute @session.database_exists?("InvalidDatabase")
+  end
+  
+  def test_config_get
+      retval = @session.config_get("network.retry")
+      assert retval[:value]
   end
 
   def test_create_and_delete_local_database_commands
