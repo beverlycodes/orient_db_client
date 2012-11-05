@@ -5,7 +5,7 @@ require 'bindata'
 
 module OrientDbClient
   module Protocols
-    class Protocol9 < Protocol7
+    class Protocol12 < Protocol7
       VERSION = 12
 
       module Commands
