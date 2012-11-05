@@ -1,5 +1,7 @@
 require File.join File.dirname(__FILE__), '..', 'test_helper'
 
+require 'pp'
+
 class TestConnection < MiniTest::Unit::TestCase
 	include ConnectionHelper
 	include ServerConfig
