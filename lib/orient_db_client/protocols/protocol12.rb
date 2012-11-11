@@ -17,7 +17,7 @@ module OrientDbClient
           protocol_string :config_name
         end
         
-        class DbCreate9 < BinData::Record
+        class DbCreate < BinData::Record
           endian :big
 
           int8            :operation,       :value => Protocol7::Operations::DB_CREATE
@@ -28,7 +28,7 @@ module OrientDbClient
           protocol_string :storage_type
         end
 
-        class DbOpen9 < BinData::Record
+        class DbOpen < BinData::Record
           endian :big
 
           int8            :operation,       :value => Protocol7::Operations::DB_OPEN
@@ -44,7 +44,7 @@ module OrientDbClient
           protocol_string :user_password
         end
 
-        class RecordLoad9 < BinData::Record
+        class RecordLoad12 < BinData::Record
           endian :big
 
           int8            :operation,         :value => Protocol7::Operations::RECORD_LOAD
@@ -87,9 +87,36 @@ module OrientDbClient
 
           super
       end
+      
+      def self.read_clusters(socket)
+              clusters = []
+      
+              num_clusters = read_short(socket)
+              (num_clusters).times do |x|
+                cluster = 
+                {
+                  :name   => read_string(socket),
+                  :id   => read_short(socket),
+                  :type   => read_string(socket),
+                  :data_segment => read_short(socket)
+                }
+                clusters << cluster
+              
+              end
+      
+              clusters
+      end
+      
+      def self.read_db_open(socket)
+              session = read_integer(socket)
+              clusters = read_clusters(socket)
+              { :session      => session,
+                :clusters     => clusters,
+                :cluster_config   => read_string(socket)  }
+      end
 
       def self.db_open(socket, database, options = {})
-        command = Commands::DbOpen9.new :protocol_version => self.version,
+        command = Commands::DbOpen.new :protocol_version => self.version,
                                         :database_name => database,
                                         :database_type => options[:database_type] || 'document',
                                         :user_name => options[:user],
@@ -115,7 +142,7 @@ module OrientDbClient
       end
 
       def self.record_load(socket, session, rid, options = {})
-        command = Commands::RecordLoad9.new :session => session,
+        command = Commands::RecordLoad12.new :session => session,
                                             :cluster_id => rid.cluster_id,
                                             :cluster_position => rid.cluster_position,
                                             :ignore_cache => options[:ignore_cache] === true ? 1 : 0
@@ -134,7 +161,7 @@ module OrientDbClient
           database = args.shift
           options = args.shift
 
-          Commands::DbCreate9.new :session => session,
+          Commands::DbCreate.new :session => session,
                                   :database => database,
                                   :database_type => options[:database_type].to_s,
                                   :storage_type => options[:storage_type]
