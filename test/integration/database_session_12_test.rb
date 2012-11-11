@@ -1,5 +1,8 @@
 require File.join File.dirname(__FILE__), '..', 'test_helper'
 
+require 'pp'
+require 'pry'
+
 class TestDatabaseSession < MiniTest::Unit::TestCase
     include ServerConfig
     include ConnectionHelper
@@ -53,6 +56,52 @@ class TestDatabaseSession < MiniTest::Unit::TestCase
         end
       end
     end
+  end
+  
+  def test_multi_create12
+    cluster = "Test123"
+
+    ensure_cluster_exists(@session, cluster)
+    @session.reload
+
+    cluster_id = @session.get_cluster(cluster)[:id]
+    
+    record = { :this => "sucks" }
+    
+    rid = @session.create_record(cluster_id, record)
+    puts "Created rid: #{rid}"
+    binding.pry
+    rec = @session.load_record(rid)
+    pp rec
+    
+  end
+  
+  def test_create_and_delete_record12
+    
+    cluster = "OTest"
+
+    ensure_cluster_exists(@session, cluster)
+    @session.reload
+
+    cluster_id = @session.get_cluster(cluster)[:id]
+    
+    record = { :key1 => "value1" }
+
+    rid = @session.create_record(cluster_id, record)
+    created_record = @session.load_record(rid)
+    
+    assert_equal cluster_id, rid.cluster_id
+    assert_equal 0, rid.cluster_position
+
+    refute_nil created_record
+    refute_nil created_record[:document]['key1']
+
+    assert_equal record[:key1], created_record[:document]['key1']
+
+    assert @session.delete_record(rid, created_record[:record_version])
+    assert_nil @session.load_record(rid)    
+
+    ensure_cluster_does_not_exist(@session, cluster)
   end
 
   def test_load_record

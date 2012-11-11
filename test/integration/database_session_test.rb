@@ -101,7 +101,7 @@ class TestDatabaseSession < MiniTest::Unit::TestCase
   end
 
   def test_create_and_delete_record
-    return
+    
     cluster = "OTest"
 
     ensure_cluster_exists(@session, cluster)
@@ -112,7 +112,6 @@ class TestDatabaseSession < MiniTest::Unit::TestCase
 
     rid = @session.create_record(cluster_id, record)
     created_record = @session.load_record(rid)
-
     assert_equal cluster_id, rid.cluster_id
     assert_equal 0, rid.cluster_position
 
