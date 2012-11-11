@@ -61,7 +61,7 @@ module OrientDbClient
       
                 int8              :operation,       :value => Protocol7::Operations::RECORD_CREATE
                 # int32             :session
-      
+                int16             :datasegment_id,   :value => -1      
                 int16             :cluster_id
                 protocol_string   :record_content
                 int8              :record_type,     :value => Protocol7::RecordTypes::DOCUMENT
