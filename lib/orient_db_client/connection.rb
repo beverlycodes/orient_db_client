@@ -97,7 +97,6 @@ module OrientDbClient
 
       result = @protocol.record_load(@socket, session, rid)
 
-      pp result
 
       if result[:message_content]
         result[:message_content].tap do |r|

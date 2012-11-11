@@ -1,8 +1,5 @@
 require File.join File.dirname(__FILE__), '..', 'test_helper'
 
-require 'pp'
-require 'pry'
-
 class TestDatabaseSession < MiniTest::Unit::TestCase
     include ServerConfig
     include ConnectionHelper
@@ -69,10 +66,8 @@ class TestDatabaseSession < MiniTest::Unit::TestCase
     record = { :this => "sucks" }
     
     rid = @session.create_record(cluster_id, record)
-    puts "Created rid: #{rid}"
-    binding.pry
     rec = @session.load_record(rid)
-    pp rec
+    
     
   end
   
