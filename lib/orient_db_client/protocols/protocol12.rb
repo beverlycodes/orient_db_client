@@ -55,6 +55,19 @@ module OrientDbClient
           protocol_string :fetch_plan
           int8            :ignore_cache,      :initial_value => 0
         end
+        
+        class RecordCreate < BinData::Record
+                endian :big
+      
+                int8              :operation,       :value => Protocol7::Operations::RECORD_CREATE
+                # int32             :session
+      
+                int16             :cluster_id
+                protocol_string   :record_content
+                int8              :record_type,     :value => Protocol7::RecordTypes::DOCUMENT
+                int8              :mode,            :value => Protocol7::SyncModes::SYNC
+        end
+        
       end
 
       def self.command(socket, session, command, options = {})
