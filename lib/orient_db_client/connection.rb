@@ -97,6 +97,8 @@ module OrientDbClient
 
       result = @protocol.record_load(@socket, session, rid)
 
+      pp result
+
       if result[:message_content]
         result[:message_content].tap do |r|
           r[:cluster_id] = rid.cluster_id
@@ -119,7 +121,7 @@ module OrientDbClient
   		response = @protocol.db_open(@socket, database, options)
       session = response[:session]
       message_content = response[:message_content]
-
+      
       @sessions[session] = DatabaseSession.new(message_content[:session], self, message_content[:clusters])
   	end
 
