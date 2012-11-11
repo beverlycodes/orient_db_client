@@ -127,6 +127,18 @@ module OrientDbClient
                 :clusters     => clusters,
                 :cluster_config   => read_string(socket)  }
       end
+      
+      def self.record_create(socket, session, cluster_id, record)
+            command = Commands::RecordCreate.new :session => session,
+                                                 :cluster_id => cluster_id,
+                                                 :record_content => serializer.serialize(record)
+            command.write(socket)
+    
+            read_response(socket)
+    
+            { :session      => read_integer(socket),
+              :message_content  => read_record_create(socket).merge({ :cluster_id => cluster_id }) }
+          end
 
       def self.db_open(socket, database, options = {})
         command = Commands::DbOpen.new :protocol_version => self.version,
