@@ -1,5 +1,5 @@
 require File.join File.dirname(__FILE__), '..', 'test_helper'
-
+ 
 class TestDatabaseSession < MiniTest::Unit::TestCase
 	include ServerConfig
 	include ConnectionHelper
@@ -12,6 +12,7 @@ class TestDatabaseSession < MiniTest::Unit::TestCase
 			:user => @options["user"],
 			:password => @options["password"]
 		})
+		
 	end
 
 	def teardown
@@ -59,7 +60,7 @@ class TestDatabaseSession < MiniTest::Unit::TestCase
 
     result[0].tap do |record|
       assert_equal 0, record[:format]
-      assert_equal 4, record[:cluster_id]
+      assert_equal 5, record[:cluster_id]
       assert_equal 0, record[:cluster_position]
 
       record[:document].tap do |doc|
@@ -70,7 +71,7 @@ class TestDatabaseSession < MiniTest::Unit::TestCase
           assert roles.is_a?(Array), "expected Array, but got #{roles.class}"
 
           assert roles[0].is_a?(OrientDbClient::Rid)
-          assert_equal 3, roles[0].cluster_id
+          assert_equal 4, roles[0].cluster_id
           assert_equal 0, roles[0].cluster_position
         end
       end
@@ -90,7 +91,7 @@ class TestDatabaseSession < MiniTest::Unit::TestCase
 
     new_cluster = @session.create_physical_cluster(cluster)
 
-    assert_equal 6, new_cluster
+    assert new_cluster
 
     assert @session.cluster_exists?(cluster)
 
@@ -100,6 +101,7 @@ class TestDatabaseSession < MiniTest::Unit::TestCase
   end
 
   def test_create_and_delete_record
+    
     cluster = "OTest"
 
     ensure_cluster_exists(@session, cluster)
@@ -110,7 +112,6 @@ class TestDatabaseSession < MiniTest::Unit::TestCase
 
     rid = @session.create_record(cluster_id, record)
     created_record = @session.load_record(rid)
-
     assert_equal cluster_id, rid.cluster_id
     assert_equal 0, rid.cluster_position
 
@@ -186,15 +187,9 @@ class TestDatabaseSession < MiniTest::Unit::TestCase
 
     record[:document].tap do |doc|
       assert_equal 'admin', doc['name']
-      assert_equal 'ACTIVE', doc['status']
-
-      doc['roles'].tap do |roles|
-        assert roles.is_a?(Array), "expected Array, but got #{roles.class}"
-
-        assert roles[0].is_a?(OrientDbClient::Rid)
-        assert_equal 3, roles[0].cluster_id
-        assert_equal 0, roles[0].cluster_position
-      end
+      assert_equal 1, doc['mode']
+      assert doc['rules'].is_a?(Hash), "expected Hash, but got #{doc['rules'].class}"
+      
     end
   end
 

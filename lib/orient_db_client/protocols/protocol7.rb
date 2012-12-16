@@ -34,6 +34,9 @@ module OrientDbClient
 				RECORD_DELETE			= 33
 				RECORD_LOAD				= 30
 				RECORD_UPDATE			= 32
+				CONFIG_GET        = 70
+				CONFIG_SET        = 71
+				CONFIG_LIST       = 72
 			end
 
 			module RecordTypes
@@ -398,6 +401,7 @@ module OrientDbClient
 			end
 
 			def self.db_close(socket, session = NEW_SESSION)
+			  return true if socket.closed?
 				command = Commands::DbClose.new :session => session
 				command.write(socket)
 
@@ -463,6 +467,8 @@ module OrientDbClient
 				{ :session 			=> read_integer(socket),
 				  :message_content 	=> read_db_open(socket)	}
 			end
+			
+     
 
 			def self.db_reload(socket, session)
 				command = Commands::DbReload.new :session => session
@@ -483,6 +489,8 @@ module OrientDbClient
 				{ :session 			=> read_integer(socket),
 				  :message_content 	=> read_db_size(socket) }
 			end
+			
+		
 
 			def self.record_create(socket, session, cluster_id, record)
 				command = Commands::RecordCreate.new :session => session,
@@ -578,12 +586,17 @@ module OrientDbClient
 			def self.read_clusters(socket)
 				clusters = []
 
-				read_short(socket).times do
-					clusters << {
+				num_clusters = read_short(socket)
+				(num_clusters).times do |x|
+					cluster = 
+					{
 						:name 	=> read_string(socket),
 						:id 	=> read_short(socket),
-						:type 	=> read_string(socket)						
+						:type 	=> read_string(socket),
+						:other => read_short(socket)
 					}
+					clusters << cluster
+				
 				end
 
 				clusters
@@ -616,6 +629,8 @@ module OrientDbClient
 						collection = read_record_collection(socket)
 						result.concat collection
 						break
+					when PayloadStatuses::SERIALIZED
+						result.push(status)
 					else
 						raise "Unsupported payload status: #{status}"
 					end
@@ -650,8 +665,10 @@ module OrientDbClient
 			end
 
 			def self.read_db_open(socket)
-				{ :session 			=> read_integer(socket),
-				  :clusters 		=> read_clusters(socket),
+			  session = read_integer(socket)
+			  clusters = read_clusters(socket)
+			  { :session 			=> session,
+				  :clusters 		=> clusters,
 				  :cluster_config 	=> read_string(socket)	}
 			end
 

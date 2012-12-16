@@ -54,6 +54,55 @@ class TestDatabaseSession < MiniTest::Unit::TestCase
       end
     end
   end
+  
+  def test_multi_create12
+    cluster = "Test123"
+
+    ensure_cluster_exists(@session, cluster)
+    @session.reload
+
+    cluster_id = @session.get_cluster(cluster)[:id]
+    
+    record = { :this => "sucks" }
+    
+    rid = @session.create_record(cluster_id, record)
+    rec = @session.load_record(rid)
+    
+    
+  end
+  
+  def test_create_class
+  	@connection.command(@session.id, "Create class testclass")
+  	@connection.command(@session.id, "drop class testclass")
+  end
+  
+  def test_create_and_delete_record12
+    
+    cluster = "OTest"
+
+    ensure_cluster_exists(@session, cluster)
+    @session.reload
+
+    cluster_id = @session.get_cluster(cluster)[:id]
+    
+    record = { :key1 => "value1" }
+
+    rid = @session.create_record(cluster_id, record)
+    created_record = @session.load_record(rid)
+    
+    assert_equal cluster_id, rid.cluster_id
+    assert_equal 0, rid.cluster_position
+
+    refute_nil created_record
+    refute_nil created_record[:document]['key1']
+
+    assert_equal record[:key1], created_record[:document]['key1']
+
+    assert @session.delete_record(rid, created_record[:record_version])
+    assert_nil @session.load_record(rid)    
+
+    ensure_cluster_does_not_exist(@session, cluster)
+  end
 
   def test_load_record
     result = @session.load_record("#4:0")
@@ -72,7 +121,7 @@ class TestDatabaseSession < MiniTest::Unit::TestCase
           assert roles.is_a?(Array), "expected Array, but got #{roles.class}"
 
           assert roles[0].is_a?(OrientDbClient::Rid)
-          assert_equal 3, roles[0].cluster_id
+          assert_equal 4, roles[0].cluster_id
           assert_equal 0, roles[0].cluster_position
         end
       end

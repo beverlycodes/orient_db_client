@@ -11,7 +11,11 @@ module OrientDbClient
   	end
 
   	def close
-      @socket.close
+  	  @socket.close
+  	end
+  	
+  	def config_get(session, config_name)
+  	  @protocol.config_get(@socket, session, config_name)
   	end
 
     def close_database(session)
@@ -93,6 +97,7 @@ module OrientDbClient
 
       result = @protocol.record_load(@socket, session, rid)
 
+
       if result[:message_content]
         result[:message_content].tap do |r|
           r[:cluster_id] = rid.cluster_id
@@ -115,12 +120,20 @@ module OrientDbClient
   		response = @protocol.db_open(@socket, database, options)
       session = response[:session]
       message_content = response[:message_content]
-
+      
       @sessions[session] = DatabaseSession.new(message_content[:session], self, message_content[:clusters])
   	end
 
     def query(session, text, options = {})
       options[:query_class_name] = :query
+      
+      result = @protocol.command(@socket, session, text, options)
+
+      result[:message_content]
+    end
+    
+    def command(session, text, options = {})
+      options[:query_class_name] = :command
       
       result = @protocol.command(@socket, session, text, options)
 

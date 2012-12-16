@@ -21,6 +21,11 @@ class TestServerSession < MiniTest::Unit::TestCase
   	assert @session.database_exists?(@options["database"])
   	refute @session.database_exists?("InvalidDatabase")
   end
+  
+  def test_config_get
+      retval = @session.config_get("network.retry")
+      assert retval[:value]
+  end
 
   def test_create_and_delete_local_database_commands
   	database = "test_create_local_database"

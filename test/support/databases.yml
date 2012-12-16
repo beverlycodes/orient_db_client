@@ -2,7 +2,7 @@ test:
   host: localhost
   port: 2424
   server_user: root
-  server_password: 83CACE21A23DB46F93BFD58A3CE48C8D29926C6EF424D7DA9BD725AE070CCDC0
+  server_password: orient123
   database: temp
   user: admin
   password: admin
