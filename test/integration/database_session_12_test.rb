@@ -71,6 +71,11 @@ class TestDatabaseSession < MiniTest::Unit::TestCase
     
   end
   
+  def test_create_class
+  	@connection.command(@session.id, "Create class testclass")
+  	@connection.command(@session.id, "drop class testclass")
+  end
+  
   def test_create_and_delete_record12
     
     cluster = "OTest"

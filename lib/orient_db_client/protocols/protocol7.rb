@@ -629,6 +629,8 @@ module OrientDbClient
 						collection = read_record_collection(socket)
 						result.concat collection
 						break
+					when PayloadStatuses::SERIALIZED
+						result.push(status)
 					else
 						raise "Unsupported payload status: #{status}"
 					end

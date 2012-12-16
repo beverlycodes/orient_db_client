@@ -91,7 +91,7 @@ class TestDatabaseSession < MiniTest::Unit::TestCase
 
     new_cluster = @session.create_physical_cluster(cluster)
 
-    assert_equal 8, new_cluster
+    assert new_cluster
 
     assert @session.cluster_exists?(cluster)
 

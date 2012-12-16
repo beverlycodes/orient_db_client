@@ -15,4 +15,5 @@ class TestConnection < MiniTest::Unit::TestCase
   def test_establishing_a_connection
     assert_instance_of OrientDbClient::Connection, @connection
   end
+  
 end
