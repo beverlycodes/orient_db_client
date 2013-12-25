@@ -35,11 +35,11 @@ Before obtaining server or database sessions, a connection must be made to an Or
 
     require 'orient_db_client'
 
-    connection = OrientDBClient.connect('localhost')
+    connection = OrientDbClient.connect('localhost')
 
 If you need to specify the port, pass it in the options Hash:
 
-    connection = OrientDBClient.connect('localhost', :port => 2424)
+    connection = OrientDbClient.connect('localhost', :port => 2424)
 
 When you're done with the connection (and all of the sessions you have opened within it):
 
